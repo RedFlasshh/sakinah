@@ -125,6 +125,22 @@ const computeStreak = (days) => {
 const inputStyle = { width: "100%", background: C.bg, border: `1px solid ${C.line}`, borderRadius: 10, padding: "12px 14px", color: C.ivory, fontSize: 15 };
 const goldBtn = { background: C.gold, color: "#1B1508", fontWeight: 700, border: "none", borderRadius: 10, padding: "12px 18px", fontSize: 15, cursor: "pointer", width: "100%" };
 
+/* Shell lives at module level — defining it inside the component
+   caused a full remount on every keystroke (keyboard kept closing). */
+const Shell = ({ children }) => (
+  <div style={{ background: C.bg, minHeight: "100vh", color: C.ivory, position: "relative", overflow: "hidden" }}>
+    <svg width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: 0.05, pointerEvents: "none" }}>
+      <defs>
+        <pattern id="star8" width="72" height="72" patternUnits="userSpaceOnUse">
+          <path d="M36 6 L43 29 L66 36 L43 43 L36 66 L29 43 L6 36 L29 29 Z" fill="none" stroke={C.gold} strokeWidth="1" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#star8)" />
+    </svg>
+    {children}
+  </div>
+);
+
 /* ================================================================== */
 /* Main                                                                */
 /* ================================================================== */
@@ -328,25 +344,15 @@ export default function Sakinah() {
     const { data, error } = await supabase.from("profiles").upsert(row).select().single();
     setAuthBusy(false);
     if (!error) setProfile(data);
-    else alert("Could not save your profile. Please try again.");
+    else {
+      console.error("profile save error:", error);
+      alert("Could not save your profile: " + (error.message || JSON.stringify(error)));
+    }
   };
 
   /* ================================================================ */
   /* Screens                                                          */
   /* ================================================================ */
-  const Shell = ({ children }) => (
-    <div style={{ background: C.bg, minHeight: "100vh", color: C.ivory, position: "relative", overflow: "hidden" }}>
-      <svg width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: 0.05, pointerEvents: "none" }}>
-        <defs>
-          <pattern id="star8" width="72" height="72" patternUnits="userSpaceOnUse">
-            <path d="M36 6 L43 29 L66 36 L43 43 L36 66 L29 43 L6 36 L29 29 Z" fill="none" stroke={C.gold} strokeWidth="1" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#star8)" />
-      </svg>
-      {children}
-    </div>
-  );
 
   /* ------- loading ------- */
   if (session === undefined) {
