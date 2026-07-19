@@ -152,13 +152,16 @@ export default function Sakinah() {
   const [board, setBoard] = useState(null);
   const [boardLoading, setBoardLoading] = useState(false);
   const [ripples, setRipples] = useState([]);
-  const [benefitIdx, setBenefitIdx] = useState(0);
+  const [dailyIdx, setDailyIdx] = useState(0);
+  const [browseIdx, setBrowseIdx] = useState(0);
   const [soundOn, setSoundOn] = useState(true);
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [obName, setObName] = useState("");
   const [obFlag, setObFlag] = useState("🇮🇳");
+  const [obVis, setObVis] = useState("name");
+  const [ummahTotal, setUmmahTotal] = useState(null);
 
   const saveTimer = useRef(null);
   const stateRef = useRef({});
@@ -166,7 +169,10 @@ export default function Sakinah() {
   const soundOnRef = useRef(true);
   soundOnRef.current = soundOn;
 
-  useEffect(() => { setBenefitIdx(dayOfYear() % BENEFITS.length); }, []);
+  useEffect(() => {
+    setDailyIdx(dayOfYear() % BENEFITS.length);
+    setBrowseIdx(Math.floor(Math.random() * BENEFITS.length));
+  }, []);
 
   /* ------- auth session ------- */
   useEffect(() => {
@@ -305,11 +311,18 @@ export default function Sakinah() {
     try {
       const { data } = await supabase
         .from("profiles")
-        .select("id,name,country_flag,streak,total_count,today_count,today_date")
+        .select("id,name,country_flag,streak,total_count,today_count,today_date,updated_at")
         .order("streak", { ascending: false })
         .order("total_count", { ascending: false })
         .limit(100);
-      setBoard(data || []);
+      // Active only: members who used the app in the last 48 hours
+      const cutoff = Date.now() - 48 * 3600 * 1000;
+      const active = (data || []).filter(
+        (p) => p.updated_at && new Date(p.updated_at).getTime() > cutoff
+      );
+      setBoard(active);
+      const { data: total } = await supabase.rpc("ummah_total");
+      if (total !== null && total !== undefined) setUmmahTotal(Number(total));
     } catch (e) { setBoard([]); }
     setBoardLoading(false);
   }, []);
@@ -337,10 +350,18 @@ export default function Sakinah() {
   const signOut = async () => { await supabase.auth.signOut(); setProfile(undefined); setDays({}); };
 
   const createProfile = async () => {
-    const n = obName.trim();
-    if (!n || !session?.user) return;
+    if (!session?.user) return;
+    const alias = "Servant #" + session.user.id.replace(/-/g, "").slice(0, 4).toUpperCase();
+    const finalName = obVis === "anon" ? alias : obName.trim();
+    if (!finalName) return;
     setAuthBusy(true);
-    const row = { id: session.user.id, name: n.slice(0, 24), country_flag: obFlag, today_date: todayKey() };
+    const row = {
+      id: session.user.id,
+      name: finalName.slice(0, 24),
+      country_flag: obFlag,
+      visibility: obVis,
+      today_date: todayKey(),
+    };
     const { data, error } = await supabase.from("profiles").upsert(row).select().single();
     setAuthBusy(false);
     if (!error) setProfile(data);
@@ -409,21 +430,56 @@ export default function Sakinah() {
 
   /* ------- onboarding (logged in, no profile yet) ------- */
   if (profile === null) {
+    const visOptions = [
+      { id: "name", title: "Show my name", desc: "Appear on the Ummah board with your name and flag." },
+      { id: "anon", title: "Join anonymously", desc: "Appear as “Servant #XXXX” — your identity stays hidden." },
+      { id: "private", title: "Keep me private", desc: "No leaderboard at all. Only your own personal tracking." },
+    ];
     return (
       <Shell>
-        <div style={{ maxWidth: 420, margin: "0 auto", padding: "70px 22px", position: "relative" }} className="fadeUp">
+        <div style={{ maxWidth: 420, margin: "0 auto", padding: "50px 22px", position: "relative" }} className="fadeUp">
           <div className="display" style={{ fontSize: 26, fontWeight: 600, marginBottom: 6 }}>As-salamu alaykum 👋</div>
-          <div style={{ fontSize: 13.5, color: C.muted, marginBottom: 24, lineHeight: 1.6 }}>
-            Choose how you'll appear on the global streak board. Your name, flag, streak, and counts will be visible to other members.
+          <div style={{ fontSize: 13.5, color: C.muted, marginBottom: 20, lineHeight: 1.6 }}>
+            Choose how you'd like to be part of the journey. You stay in full control of what others see.
           </div>
-          <label style={{ fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint }}>Your name</label>
-          <input value={obName} onChange={(e) => setObName(e.target.value)} placeholder="e.g. Yusuf" maxLength={24}
-            style={{ ...inputStyle, margin: "6px 0 16px" }} />
+
+          <label style={{ fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint }}>Privacy</label>
+          <div style={{ margin: "8px 0 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+            {visOptions.map((v) => {
+              const active = obVis === v.id;
+              return (
+                <button key={v.id} onClick={() => setObVis(v.id)}
+                  style={{
+                    textAlign: "left", background: active ? C.surface2 : C.surface,
+                    border: `1px solid ${active ? C.gold : C.line}`, borderRadius: 12,
+                    padding: "12px 14px", cursor: "pointer", color: C.ivory,
+                  }}>
+                  <div style={{ fontSize: 14.5, fontWeight: 600, color: active ? C.goldBright : C.ivory }}>{active ? "● " : "○ "}{v.title}</div>
+                  <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>{v.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {obVis !== "anon" && (
+            <>
+              <label style={{ fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint }}>Your name</label>
+              <input value={obName} onChange={(e) => setObName(e.target.value)} placeholder="e.g. Yusuf" maxLength={24}
+                style={{ ...inputStyle, margin: "6px 0 16px" }} />
+            </>
+          )}
+          {obVis === "anon" && (
+            <div style={{ fontSize: 12.5, color: C.muted, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 10, padding: "10px 14px", margin: "0 0 16px", lineHeight: 1.5 }}>
+              You'll appear as an anonymous servant of Allah — no name needed.
+            </div>
+          )}
+
           <label style={{ fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint }}>Your country</label>
           <select value={obFlag} onChange={(e) => setObFlag(e.target.value)} style={{ ...inputStyle, margin: "6px 0 22px" }}>
             {COUNTRIES.map(([flag, cname]) => (<option key={cname} value={flag}>{flag}  {cname}</option>))}
           </select>
-          <button onClick={createProfile} disabled={authBusy || !obName.trim()} style={{ ...goldBtn, opacity: authBusy || !obName.trim() ? 0.6 : 1 }}>
+          <button onClick={createProfile} disabled={authBusy || (obVis !== "anon" && !obName.trim())}
+            style={{ ...goldBtn, opacity: authBusy || (obVis !== "anon" && !obName.trim()) ? 0.6 : 1 }}>
             Begin the journey →
           </button>
         </div>
@@ -440,7 +496,8 @@ export default function Sakinah() {
   }
 
   /* ------- main app ------- */
-  const benefit = BENEFITS[benefitIdx];
+  const daily = BENEFITS[dailyIdx];
+  const benefit = BENEFITS[browseIdx];
 
   return (
     <Shell>
@@ -520,10 +577,10 @@ export default function Sakinah() {
             </div>
 
             <div style={{ marginTop: 26, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: 18 }}>
-              <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: "uppercase", color: CAT_COLOR[benefit.c], marginBottom: 6 }}>Today's reminder · {benefit.c}</div>
-              <div className="display" style={{ fontSize: 19, fontWeight: 600, marginBottom: 6 }}>{benefit.t}</div>
-              <div style={{ fontSize: 14, color: C.muted, lineHeight: 1.55 }}>{benefit.b}</div>
-              <div style={{ fontSize: 11.5, color: C.faint, marginTop: 8, fontStyle: "italic" }}>{benefit.s}</div>
+              <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: "uppercase", color: CAT_COLOR[daily.c], marginBottom: 6 }}>Today's reminder · {daily.c}</div>
+              <div className="display" style={{ fontSize: 19, fontWeight: 600, marginBottom: 6 }}>{daily.t}</div>
+              <div style={{ fontSize: 14, color: C.muted, lineHeight: 1.55 }}>{daily.b}</div>
+              <div style={{ fontSize: 11.5, color: C.faint, marginTop: 8, fontStyle: "italic" }}>{daily.s}</div>
             </div>
           </div>
         )}
@@ -532,14 +589,20 @@ export default function Sakinah() {
         {tab === "benefits" && (
           <div className="fadeUp">
             <div style={{ background: C.surface2, border: `1px solid ${C.gold}44`, borderRadius: 18, padding: 22, marginBottom: 16, textAlign: "center" }}>
-              <div style={{ fontSize: 10, letterSpacing: 3, textTransform: "uppercase", color: CAT_COLOR[benefit.c], marginBottom: 8 }}>Benefit {benefitIdx + 1} of {BENEFITS.length} · {benefit.c}</div>
+              <div style={{ fontSize: 10, letterSpacing: 3, textTransform: "uppercase", color: CAT_COLOR[benefit.c], marginBottom: 8 }}>Benefit {browseIdx + 1} of {BENEFITS.length} · {benefit.c}</div>
               <div className="display" style={{ fontSize: 24, fontWeight: 600, marginBottom: 10 }}>{benefit.t}</div>
               <div style={{ fontSize: 15, lineHeight: 1.65, opacity: 0.9 }}>{benefit.b}</div>
               <div style={{ fontSize: 12, color: C.faint, marginTop: 12, fontStyle: "italic" }}>{benefit.s}</div>
-              <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 18 }}>
-                <button onClick={() => setBenefitIdx((benefitIdx - 1 + BENEFITS.length) % BENEFITS.length)}
+              <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
+                <button onClick={() => setBrowseIdx((browseIdx - 1 + BENEFITS.length) % BENEFITS.length)}
                   style={{ background: C.surface, color: C.ivory, border: `1px solid ${C.line}`, borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontSize: 13 }}>← Previous</button>
-                <button onClick={() => setBenefitIdx((benefitIdx + 1) % BENEFITS.length)}
+                <button onClick={() => {
+                    let r = Math.floor(Math.random() * BENEFITS.length);
+                    if (r === browseIdx) r = (r + 1) % BENEFITS.length;
+                    setBrowseIdx(r);
+                  }}
+                  style={{ background: C.surface2, color: C.goldBright, border: `1px solid ${C.gold}55`, borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontSize: 13 }}>🎲 Shuffle</button>
+                <button onClick={() => setBrowseIdx((browseIdx + 1) % BENEFITS.length)}
                   style={{ background: C.gold, color: "#1B1508", fontWeight: 700, border: "none", borderRadius: 10, padding: "8px 18px", cursor: "pointer", fontSize: 13 }}>Next →</button>
               </div>
             </div>
@@ -553,8 +616,22 @@ export default function Sakinah() {
         {tab === "board" && (
           <div className="fadeUp">
             <div className="display" style={{ fontSize: 21, fontWeight: 600, marginBottom: 4 }}>The Ummah Board</div>
-            <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 16 }}>Believers around the world, keeping the streak alive together.</div>
+            <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 14 }}>Believers active in the last 48 hours, keeping the streak alive together.</div>
+
+            {ummahTotal !== null && (
+              <div style={{ background: C.surface2, border: `1px solid ${C.gold}44`, borderRadius: 16, padding: 18, marginBottom: 14, textAlign: "center" }}>
+                <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: "uppercase", color: C.gold, marginBottom: 6 }}>🤲 Together as one Ummah</div>
+                <div className="display" style={{ fontSize: 32, fontWeight: 600, color: C.goldBright }}>{ummahTotal.toLocaleString()}</div>
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>istighfar made through this app — every member counted, seen and unseen</div>
+              </div>
+            )}
+
             {boardLoading && <div style={{ color: C.faint, fontSize: 14, padding: 20, textAlign: "center" }}>Loading the ummah…</div>}
+            {!boardLoading && board && board.length === 0 && (
+              <div style={{ color: C.muted, fontSize: 13.5, background: C.surface, borderRadius: 14, padding: 20, textAlign: "center", lineHeight: 1.6 }}>
+                No active members in the last 48 hours — be the one who revives the board. 🔥
+              </div>
+            )}
             {!boardLoading && board && board.map((p, i) => {
               const isMe = p.id === session.user.id;
               const todayValid = p.today_date === today;
