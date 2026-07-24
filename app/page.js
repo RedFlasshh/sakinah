@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { Flame, BookOpen, Globe2, Map, RotateCcw, Volume2, VolumeX, LogOut, Mail } from "lucide-react";
+import { Flame, BookOpen, Globe2, Map, RotateCcw, Volume2, VolumeX, LogOut, Mail, CloudOff } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /* Design tokens                                                       */
@@ -10,11 +10,14 @@ import { Flame, BookOpen, Globe2, Map, RotateCcw, Volume2, VolumeX, LogOut, Mail
 const C = {
   bg: "#0B1917", surface: "#122622", surface2: "#1A332D", line: "#22423A",
   gold: "#C9A24B", goldBright: "#E8CD86", ivory: "#F4EFE2",
-  muted: "#8BA79A", faint: "#5C776C", ringTrack: "#1E3A33",
+  muted: "#8BA79A", faint: "#5C776C", ringTrack: "#1E3A33", warn: "#D98F4E",
 };
 
+const APP_NAME = "Sakinah";        // ← rebrand: change this one line
 const DAILY_GOAL = 1000;
 const JOURNEY_DAYS = 180;
+const QUEUE_KEY = "sakinah-queue"; // offline pending deltas
+const CACHE_KEY = "sakinah-cache"; // last known counts, for offline display
 
 /* ------------------------------------------------------------------ */
 /* 60 benefits                                                         */
@@ -84,6 +87,14 @@ const BENEFITS = [
 
 const CAT_COLOR = { Quran: "#C9A24B", Hadith: "#3FAE7C", Scholars: "#7FB3D5", Reflection: "#B08FC9" };
 
+/* Niyat reminders — the app humbling its own gamification */
+const NIYAT = [
+  "This count is for Allah, not for the board. Check your intention.",
+  "“Actions are judged by intentions.” — Bukhari & Muslim",
+  "The best deed may be the one no one ever sees.",
+  "No number here is recorded with Allah — only what was sincere.",
+];
+
 const COUNTRIES = [
   ["🇮🇳", "India"], ["🇵🇰", "Pakistan"], ["🇧🇩", "Bangladesh"], ["🇸🇦", "Saudi Arabia"], ["🇦🇪", "UAE"],
   ["🇮🇩", "Indonesia"], ["🇲🇾", "Malaysia"], ["🇹🇷", "Türkiye"], ["🇪🇬", "Egypt"], ["🇳🇬", "Nigeria"],
@@ -100,33 +111,64 @@ const COUNTRIES = [
 ];
 
 /* ------------------------------------------------------------------ */
-/* Helpers                                                             */
+/* Date helpers — TIMEZONE SAFE                                        */
+/* The day is computed in the user's HOME timezone (stored at signup), */
+/* so travelling across timezones can never break or double a day.     */
 /* ------------------------------------------------------------------ */
-const todayKey = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const deviceTz = () => {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata"; }
+  catch { return "Asia/Kolkata"; }
 };
-const dayOfYear = () => {
-  const now = new Date();
-  return Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+const dayKeyInTz = (tz, date = new Date()) => {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(date);
+  } catch {
+    return new Intl.DateTimeFormat("en-CA").format(date);
+  }
 };
-const computeStreak = (days) => {
+const shiftDayKey = (tz, offsetDays) =>
+  dayKeyInTz(tz, new Date(Date.now() + offsetDays * 86400000));
+
+const computeStreak = (days, tz) => {
   let streak = 0;
-  const d = new Date();
-  if ((days[todayKey()] || 0) < DAILY_GOAL) d.setDate(d.getDate() - 1);
+  let i = 0;
+  if ((days[dayKeyInTz(tz)] || 0) < DAILY_GOAL) i = -1; // today is still open
   while (true) {
-    const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    if ((days[k] || 0) >= DAILY_GOAL) { streak++; d.setDate(d.getDate() - 1); }
+    const k = shiftDayKey(tz, i);
+    if ((days[k] || 0) >= DAILY_GOAL) { streak++; i--; }
     else break;
   }
   return streak;
 };
 
+/* Consistency band — shown publicly instead of exact numbers */
+const bandFor = (streak) => {
+  if (streak >= 100) return { label: "Steadfast", color: C.goldBright };
+  if (streak >= 40) return { label: "Consistent", color: C.gold };
+  if (streak >= 7) return { label: "Building", color: "#3FAE7C" };
+  if (streak >= 1) return { label: "Under way", color: C.muted };
+  return { label: "Returning", color: C.faint };
+};
+
+/* Offline queue (localStorage works in a real deployed app) */
+const readQueue = () => {
+  try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || "{}"); } catch { return {}; }
+};
+const writeQueue = (q) => {
+  try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); } catch {}
+};
+const queueDelta = (day, delta) => {
+  const q = readQueue();
+  q[day] = (q[day] || 0) + delta;
+  writeQueue(q);
+};
+
 const inputStyle = { width: "100%", background: C.bg, border: `1px solid ${C.line}`, borderRadius: 10, padding: "12px 14px", color: C.ivory, fontSize: 15 };
 const goldBtn = { background: C.gold, color: "#1B1508", fontWeight: 700, border: "none", borderRadius: 10, padding: "12px 18px", fontSize: 15, cursor: "pointer", width: "100%" };
 
-/* Shell lives at module level — defining it inside the component
-   caused a full remount on every keystroke (keyboard kept closing). */
+/* Shell at module level — keeps inputs from losing focus on each keystroke */
 const Shell = ({ children }) => (
   <div style={{ background: C.bg, minHeight: "100vh", color: C.ivory, position: "relative", overflow: "hidden" }}>
     <svg width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: 0.05, pointerEvents: "none" }}>
@@ -142,36 +184,50 @@ const Shell = ({ children }) => (
 );
 
 /* ================================================================== */
-/* Main                                                                */
-/* ================================================================== */
 export default function Sakinah() {
-  const [session, setSession] = useState(undefined); // undefined = loading
+  const [session, setSession] = useState(undefined);
   const [profile, setProfile] = useState(undefined);
   const [days, setDays] = useState({});
+  const [dataReady, setDataReady] = useState(false); // counting locked until true
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [pending, setPending] = useState(0);
   const [tab, setTab] = useState("count");
   const [board, setBoard] = useState(null);
   const [boardLoading, setBoardLoading] = useState(false);
   const [ripples, setRipples] = useState([]);
   const [dailyIdx, setDailyIdx] = useState(0);
   const [browseIdx, setBrowseIdx] = useState(0);
+  const [niyatIdx, setNiyatIdx] = useState(0);
   const [soundOn, setSoundOn] = useState(true);
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [obName, setObName] = useState("");
   const [obFlag, setObFlag] = useState("🇮🇳");
-  const [obVis, setObVis] = useState("name");
+  const [obVis, setObVis] = useState("anon"); // concealment is the default
   const [ummahTotal, setUmmahTotal] = useState(null);
+  const [ummahActive, setUmmahActive] = useState(null);
+  const [savingNote, setSavingNote] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const saveTimer = useRef(null);
-  const stateRef = useRef({});
+  const flushTimer = useRef(null);
   const audioRef = useRef(null);
   const soundOnRef = useRef(true);
   soundOnRef.current = soundOn;
 
+  const tz = profile?.timezone || deviceTz();
+  const today = dayKeyInTz(tz);
+  const todayCount = days[today] || 0;
+  const streak = computeStreak(days, tz);
+  const completedDays = Object.values(days).filter((v) => v >= DAILY_GOAL).length;
+  const totalAll = Object.values(days).reduce((a, b) => a + b, 0);
+  const pct = Math.min(todayCount / DAILY_GOAL, 1);
+
   useEffect(() => {
-    setDailyIdx(dayOfYear() % BENEFITS.length);
+    const doy = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+    setDailyIdx(doy % BENEFITS.length);
     setBrowseIdx(Math.floor(Math.random() * BENEFITS.length));
+    setNiyatIdx(Math.floor(Math.random() * NIYAT.length));
   }, []);
 
   /* ------- auth session ------- */
@@ -181,48 +237,95 @@ export default function Sakinah() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  /* ------- load profile + daily counts once logged in ------- */
-  useEffect(() => {
-    if (!session?.user) { setProfile(undefined); setDays({}); return; }
-    (async () => {
-      const { data: prof } = await supabase.from("profiles").select("*").eq("id", session.user.id).maybeSingle();
+  /* ------- load profile + counts (cache fallback, never blind-write) ------- */
+  const loadAll = useCallback(async () => {
+    if (!session?.user) return;
+    setLoadFailed(false);
+    try {
+      const { data: prof, error: pErr } = await supabase
+        .from("profiles").select("*").eq("id", session.user.id).maybeSingle();
+      if (pErr) throw pErr;
       setProfile(prof ?? null);
-      const { data: rows } = await supabase.from("daily_counts").select("day,count").eq("user_id", session.user.id);
+      if (!prof) { setDataReady(false); return; }
+
+      const { data: rows, error: rErr } = await supabase
+        .from("daily_counts").select("day,count").eq("user_id", session.user.id);
+      if (rErr) throw rErr;
+
       const map = {};
       (rows || []).forEach((r) => { map[r.day] = r.count; });
+      const q = readQueue();
+      Object.entries(q).forEach(([d, delta]) => { map[d] = Math.max((map[d] || 0) + delta, 0); });
+      setPending(Object.values(q).reduce((a, b) => a + Math.abs(b), 0));
       setDays(map);
-    })();
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(map)); } catch {}
+      setDataReady(true);
+    } catch (e) {
+      console.error("load failed", e);
+      try {
+        const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
+        setDays(cached);
+      } catch {}
+      setDataReady(false);
+      setLoadFailed(true);
+    }
   }, [session]);
 
-  const today = todayKey();
-  const todayCount = days[today] || 0;
-  const streak = computeStreak(days);
-  const completedDays = Object.values(days).filter((v) => v >= DAILY_GOAL).length;
-  const totalAll = Object.values(days).reduce((a, b) => a + b, 0);
-  const pct = Math.min(todayCount / DAILY_GOAL, 1);
+  useEffect(() => {
+    if (!session?.user) { setProfile(undefined); setDays({}); setDataReady(false); return; }
+    loadAll();
+  }, [session, loadAll]);
 
-  /* ------- debounced save to Supabase ------- */
-  stateRef.current = { days, profile, userId: session?.user?.id };
-  const scheduleSave = useCallback(() => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(async () => {
-      const { days, profile, userId } = stateRef.current;
-      if (!userId) return;
-      const t = todayKey();
+  /* ------- flush queued deltas atomically ------- */
+  const flushQueue = useCallback(async () => {
+    if (!session?.user) return;
+    const q = readQueue();
+    const entries = Object.entries(q).filter(([, d]) => d !== 0);
+    if (entries.length === 0) { setPending(0); return; }
+    setSavingNote("Saving…");
+    for (const [day, delta] of entries) {
       try {
-        await supabase.from("daily_counts").upsert({ user_id: userId, day: t, count: days[t] || 0 });
-        if (profile) {
-          await supabase.from("profiles").update({
-            streak: computeStreak(days),
-            total_count: Object.values(days).reduce((a, b) => a + b, 0),
-            today_count: days[t] || 0,
-            today_date: t,
-            updated_at: new Date().toISOString(),
-          }).eq("id", userId);
-        }
-      } catch (e) { console.error("save failed", e); }
-    }, 1200);
-  }, []);
+        const { error } = await supabase.rpc("add_istighfar", { p_day: day, p_delta: delta });
+        if (error) throw error;
+        const cur = readQueue();
+        delete cur[day];
+        writeQueue(cur);
+      } catch (e) {
+        console.error("flush failed for", day, e);
+        setSavingNote("");
+        setPending(Object.values(readQueue()).reduce((a, b) => a + Math.abs(b), 0));
+        return; // stays queued, retried later
+      }
+    }
+    setPending(0);
+    setSavingNote("");
+    try {
+      await supabase.from("profiles").update({
+        streak: computeStreak(days, tz),
+        total_count: Object.values(days).reduce((a, b) => a + b, 0),
+        today_count: days[today] || 0,
+        today_date: today,
+        last_active: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }).eq("id", session.user.id);
+    } catch (e) { console.error("aggregate update failed", e); }
+  }, [session, days, tz, today]);
+
+  const scheduleFlush = useCallback(() => {
+    if (flushTimer.current) clearTimeout(flushTimer.current);
+    flushTimer.current = setTimeout(() => { flushQueue(); }, 1500);
+  }, [flushQueue]);
+
+  useEffect(() => {
+    const onOnline = () => flushQueue();
+    const onHide = () => { if (document.visibilityState === "hidden") flushQueue(); };
+    window.addEventListener("online", onOnline);
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      document.removeEventListener("visibilitychange", onHide);
+    };
+  }, [flushQueue]);
 
   /* ------- sound engine ------- */
   const getCtx = () => {
@@ -285,48 +388,51 @@ export default function Sakinah() {
     } catch (e) {}
   };
 
-  /* ------- counting ------- */
+  /* ------- counting (queue-first, atomic sync) ------- */
   const addCount = (n, e) => {
+    if (!dataReady) return; // never write on top of unloaded data
     const prevC = todayCount;
-    const nextC = prevC + n;
+    const nextC = Math.max(prevC + n, 0);
     if (prevC < DAILY_GOAL && nextC >= DAILY_GOAL) playComplete();
     else if (Math.floor(nextC / 100) > Math.floor(prevC / 100)) playMilestone();
     else playDrop();
-    setDays((prev) => ({ ...prev, [today]: (prev[today] || 0) + n }));
-    scheduleSave();
+
+    setDays((prev) => {
+      const updated = { ...prev, [today]: Math.max((prev[today] || 0) + n, 0) };
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+    queueDelta(today, n);
+    setPending((p) => p + Math.abs(n));
+    scheduleFlush();
+
     if (e && n === 1) {
       const id = Date.now() + Math.random();
       setRipples((r) => [...r.slice(-6), { id }]);
       setTimeout(() => setRipples((r) => r.filter((x) => x.id !== id)), 900);
     }
   };
-  const undoOne = () => {
-    setDays((prev) => ({ ...prev, [today]: Math.max((prev[today] || 0) - 1, 0) }));
-    scheduleSave();
-  };
+  const undoOne = () => { if (todayCount > 0) addCount(-1); };
 
-  /* ------- leaderboard ------- */
+  /* ------- presence board ------- */
   const loadBoard = useCallback(async () => {
     setBoardLoading(true);
     try {
       const { data } = await supabase
         .from("profiles")
-        .select("id,name,country_flag,streak,total_count,today_count,today_date,updated_at")
-        .order("streak", { ascending: false })
-        .order("total_count", { ascending: false })
-        .limit(100);
-      // Active only: members who used the app in the last 48 hours
-      const cutoff = Date.now() - 48 * 3600 * 1000;
-      const active = (data || []).filter(
-        (p) => p.updated_at && new Date(p.updated_at).getTime() > cutoff
-      );
-      setBoard(active);
+        .select("id,name,country_flag,streak,last_active")
+        .order("last_active", { ascending: false, nullsFirst: false })
+        .limit(60);
+      const cutoff = Date.now() - 24 * 3600 * 1000;
+      setBoard((data || []).filter((p) => p.last_active && new Date(p.last_active).getTime() > cutoff));
       const { data: total } = await supabase.rpc("ummah_total");
       if (total !== null && total !== undefined) setUmmahTotal(Number(total));
+      const { data: act } = await supabase.rpc("ummah_active_count");
+      if (act !== null && act !== undefined) setUmmahActive(Number(act));
     } catch (e) { setBoard([]); }
     setBoardLoading(false);
   }, []);
-  useEffect(() => { if (tab === "board" && session) loadBoard(); }, [tab, session, loadBoard]);
+  useEffect(() => { if (tab === "board" && session && profile) loadBoard(); }, [tab, session, profile, loadBoard]);
 
   /* ------- auth actions ------- */
   const signInGoogle = async () => {
@@ -347,12 +453,17 @@ export default function Sakinah() {
     if (!error) setEmailSent(true);
     else alert("Could not send the link. Check the email address and try again.");
   };
-  const signOut = async () => { await supabase.auth.signOut(); setProfile(undefined); setDays({}); };
+  const signOut = async () => {
+    await flushQueue();
+    await supabase.auth.signOut();
+    setProfile(undefined); setDays({}); setDataReady(false);
+  };
+
+  const aliasFor = (uid) => "Servant #" + uid.replace(/-/g, "").slice(0, 4).toUpperCase();
 
   const createProfile = async () => {
     if (!session?.user) return;
-    const alias = "Servant #" + session.user.id.replace(/-/g, "").slice(0, 4).toUpperCase();
-    const finalName = obVis === "anon" ? alias : obName.trim();
+    const finalName = obVis === "name" ? obName.trim() : aliasFor(session.user.id);
     if (!finalName) return;
     setAuthBusy(true);
     const row = {
@@ -360,41 +471,67 @@ export default function Sakinah() {
       name: finalName.slice(0, 24),
       country_flag: obFlag,
       visibility: obVis,
-      today_date: todayKey(),
+      timezone: deviceTz(),
+      today_date: dayKeyInTz(deviceTz()),
+      last_active: new Date().toISOString(),
     };
     const { data, error } = await supabase.from("profiles").upsert(row).select().single();
     setAuthBusy(false);
-    if (!error) setProfile(data);
+    if (!error) { setProfile(data); setDataReady(true); }
     else {
       console.error("profile save error:", error);
       alert("Could not save your profile: " + (error.message || JSON.stringify(error)));
     }
   };
 
+  const updateVisibility = async (vis) => {
+    if (!session?.user || !profile) return;
+    const patch = { visibility: vis };
+    if (vis !== "name" && !String(profile.name).startsWith("Servant #")) {
+      patch.name = aliasFor(session.user.id);
+    }
+    const { data, error } = await supabase.from("profiles").update(patch).eq("id", session.user.id).select().single();
+    if (!error) setProfile(data);
+    else alert("Could not update: " + error.message);
+  };
+
+  const resetTimezone = async () => {
+    if (!session?.user) return;
+    const { data, error } = await supabase.from("profiles")
+      .update({ timezone: deviceTz() }).eq("id", session.user.id).select().single();
+    if (!error) { setProfile(data); alert("Home timezone set to " + deviceTz()); }
+  };
+
+  const deleteAccount = async () => {
+    try {
+      const { error } = await supabase.rpc("delete_my_account");
+      if (error) throw error;
+      try { localStorage.removeItem(QUEUE_KEY); localStorage.removeItem(CACHE_KEY); } catch {}
+      await supabase.auth.signOut();
+      setProfile(undefined); setDays({}); setSession(null);
+    } catch (e) {
+      alert("Could not delete the account: " + (e.message || e));
+    }
+  };
+
   /* ================================================================ */
   /* Screens                                                          */
   /* ================================================================ */
-
-  /* ------- loading ------- */
   if (session === undefined) {
-    return (
-      <Shell>
-        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>Opening…</div>
-      </Shell>
-    );
+    return <Shell><div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>Opening…</div></Shell>;
   }
 
-  /* ------- login screen ------- */
+  /* ------- login ------- */
   if (!session) {
     return (
       <Shell>
         <div style={{ maxWidth: 420, margin: "0 auto", padding: "60px 22px", position: "relative" }} className="fadeUp">
           <div style={{ textAlign: "center", marginBottom: 36 }}>
             <div className="amiri" style={{ fontSize: 40, color: C.goldBright, lineHeight: 1.6 }}>أَسْتَغْفِرُ الله</div>
-            <div className="display" style={{ fontSize: 34, fontWeight: 600, marginTop: 8 }}>Sakinah</div>
+            <div className="display" style={{ fontSize: 34, fontWeight: 600, marginTop: 8 }}>{APP_NAME}</div>
             <div style={{ fontSize: 12, color: C.faint, letterSpacing: 3, textTransform: "uppercase", marginTop: 4 }}>The Istighfar Companion</div>
             <div style={{ fontSize: 14, color: C.muted, marginTop: 18, lineHeight: 1.6 }}>
-              1,000 istighfar a day. Your streak, synced on every device, alongside believers around the world.
+              1,000 istighfar a day — kept quietly, or anonymously alongside believers around the world.
             </div>
           </div>
 
@@ -419,28 +556,32 @@ export default function Sakinah() {
               <div style={{ fontSize: 11.5, color: C.faint, marginTop: 10, textAlign: "center" }}>No password needed — we email you a secure link.</div>
             </>
           ) : (
-            <div style={{ background: C.surface2, border: `1px solid ${C.gold}44`, borderRadius: 14, padding: 18, textAlign: "center", fontSize: 14, color: C.ivory, lineHeight: 1.6 }}>
+            <div style={{ background: C.surface2, border: `1px solid ${C.gold}44`, borderRadius: 14, padding: 18, textAlign: "center", fontSize: 14, lineHeight: 1.6 }}>
               ✉️ Check your inbox — we sent a sign-in link to <b>{email}</b>. Open it on this device.
             </div>
           )}
+
+          <div style={{ textAlign: "center", marginTop: 26 }}>
+            <a href="/privacy" style={{ fontSize: 12, color: C.faint }}>Privacy Policy</a>
+          </div>
         </div>
       </Shell>
     );
   }
 
-  /* ------- onboarding (logged in, no profile yet) ------- */
+  /* ------- onboarding ------- */
   if (profile === null) {
     const visOptions = [
-      { id: "name", title: "Show my name", desc: "Appear on the Ummah board with your name and flag." },
-      { id: "anon", title: "Join anonymously", desc: "Appear as “Servant #XXXX” — your identity stays hidden." },
-      { id: "private", title: "Keep me private", desc: "No leaderboard at all. Only your own personal tracking." },
+      { id: "anon", title: "Join anonymously", desc: "You appear only as “Servant #XXXX” with your flag. Nothing identifies you. (Recommended)" },
+      { id: "private", title: "Hidden deed", desc: "You appear to no one at all. “The best charity is that which the left hand does not know of.”" },
+      { id: "name", title: "Show my name", desc: "Your chosen name is visible to other members." },
     ];
     return (
       <Shell>
-        <div style={{ maxWidth: 420, margin: "0 auto", padding: "50px 22px", position: "relative" }} className="fadeUp">
+        <div style={{ maxWidth: 420, margin: "0 auto", padding: "44px 22px", position: "relative" }} className="fadeUp">
           <div className="display" style={{ fontSize: 26, fontWeight: 600, marginBottom: 6 }}>As-salamu alaykum 👋</div>
           <div style={{ fontSize: 13.5, color: C.muted, marginBottom: 20, lineHeight: 1.6 }}>
-            Choose how you'd like to be part of the journey. You stay in full control of what others see.
+            Choose how you'd like to be present. Concealing your worship is the default here — it is the safer path for the heart.
           </div>
 
           <label style={{ fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint }}>Privacy</label>
@@ -449,11 +590,7 @@ export default function Sakinah() {
               const active = obVis === v.id;
               return (
                 <button key={v.id} onClick={() => setObVis(v.id)}
-                  style={{
-                    textAlign: "left", background: active ? C.surface2 : C.surface,
-                    border: `1px solid ${active ? C.gold : C.line}`, borderRadius: 12,
-                    padding: "12px 14px", cursor: "pointer", color: C.ivory,
-                  }}>
+                  style={{ textAlign: "left", background: active ? C.surface2 : C.surface, border: `1px solid ${active ? C.gold : C.line}`, borderRadius: 12, padding: "12px 14px", cursor: "pointer", color: C.ivory }}>
                   <div style={{ fontSize: 14.5, fontWeight: 600, color: active ? C.goldBright : C.ivory }}>{active ? "● " : "○ "}{v.title}</div>
                   <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>{v.desc}</div>
                 </button>
@@ -461,16 +598,15 @@ export default function Sakinah() {
             })}
           </div>
 
-          {obVis !== "anon" && (
+          {obVis === "name" ? (
             <>
               <label style={{ fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint }}>Your name</label>
               <input value={obName} onChange={(e) => setObName(e.target.value)} placeholder="e.g. Yusuf" maxLength={24}
                 style={{ ...inputStyle, margin: "6px 0 16px" }} />
             </>
-          )}
-          {obVis === "anon" && (
+          ) : (
             <div style={{ fontSize: 12.5, color: C.muted, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 10, padding: "10px 14px", margin: "0 0 16px", lineHeight: 1.5 }}>
-              You'll appear as an anonymous servant of Allah — no name needed.
+              No name needed — your record stays between you and Allah.
             </div>
           )}
 
@@ -478,26 +614,26 @@ export default function Sakinah() {
           <select value={obFlag} onChange={(e) => setObFlag(e.target.value)} style={{ ...inputStyle, margin: "6px 0 22px" }}>
             {COUNTRIES.map(([flag, cname]) => (<option key={cname} value={flag}>{flag}  {cname}</option>))}
           </select>
-          <button onClick={createProfile} disabled={authBusy || (obVis !== "anon" && !obName.trim())}
-            style={{ ...goldBtn, opacity: authBusy || (obVis !== "anon" && !obName.trim()) ? 0.6 : 1 }}>
+
+          <button onClick={createProfile} disabled={authBusy || (obVis === "name" && !obName.trim())}
+            style={{ ...goldBtn, opacity: authBusy || (obVis === "name" && !obName.trim()) ? 0.6 : 1 }}>
             Begin the journey →
           </button>
+          <div style={{ textAlign: "center", marginTop: 16 }}>
+            <a href="/privacy" style={{ fontSize: 12, color: C.faint }}>Privacy Policy</a>
+          </div>
         </div>
       </Shell>
     );
   }
 
   if (profile === undefined) {
-    return (
-      <Shell>
-        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>Loading your journey…</div>
-      </Shell>
-    );
+    return <Shell><div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>Loading your journey…</div></Shell>;
   }
 
-  /* ------- main app ------- */
   const daily = BENEFITS[dailyIdx];
   const benefit = BENEFITS[browseIdx];
+  const myBand = bandFor(streak);
 
   return (
     <Shell>
@@ -505,9 +641,9 @@ export default function Sakinah() {
         {/* Header */}
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <div>
-            <div className="display" style={{ fontSize: 26, fontWeight: 600, letterSpacing: 0.5 }}>Sakinah</div>
+            <div className="display" style={{ fontSize: 26, fontWeight: 600, letterSpacing: 0.5 }}>{APP_NAME}</div>
             <div style={{ fontSize: 11, color: C.faint, letterSpacing: 2.5, textTransform: "uppercase" }}>
-              {profile.country_flag} {profile.name}
+              {profile.country_flag} {profile.visibility === "name" ? profile.name : "You"}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -526,21 +662,42 @@ export default function Sakinah() {
           </div>
         </header>
 
+        {/* sync banners */}
+        {loadFailed && (
+          <div style={{ background: "#3A2415", border: `1px solid ${C.warn}66`, borderRadius: 12, padding: "12px 14px", marginBottom: 14, display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <CloudOff size={16} color={C.warn} style={{ marginTop: 2, flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>Couldn't reach your saved progress</div>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 2, lineHeight: 1.45 }}>
+                Counting is paused so nothing already recorded gets overwritten.
+              </div>
+              <button onClick={loadAll} style={{ marginTop: 8, background: C.warn, color: "#1B1508", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                Try again
+              </button>
+            </div>
+          </div>
+        )}
+        {!loadFailed && pending > 0 && (
+          <div style={{ fontSize: 11.5, color: C.faint, textAlign: "center", marginBottom: 8 }}>
+            {savingNote || `${pending} waiting to sync — safe on this device`}
+          </div>
+        )}
+
         {/* COUNT */}
         {tab === "count" && (
           <div className="fadeUp">
             <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}>
-              <button onClick={(e) => addCount(1, e)} aria-label="Count one istighfar"
+              <button onClick={(e) => addCount(1, e)} disabled={!dataReady} aria-label="Count one istighfar"
                 style={{
                   position: "relative", width: 290, height: 290, borderRadius: "50%",
                   background: `radial-gradient(circle at 50% 42%, ${C.surface2}, ${C.surface} 70%)`,
-                  border: "none", cursor: "pointer",
+                  border: "none", cursor: dataReady ? "pointer" : "not-allowed", opacity: dataReady ? 1 : 0.5,
                   animation: pct >= 1 ? "pulseGlow 2.4s ease-in-out infinite" : "none",
                   transition: "transform .08s ease",
                 }}
-                onPointerDown={(e) => (e.currentTarget.style.transform = "scale(.97)")}
-                onPointerUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                onPointerLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                onPointerDown={(e) => { if (dataReady) e.currentTarget.style.transform = "scale(.97)"; }}
+                onPointerUp={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+                onPointerLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
               >
                 <svg width="290" height="290" style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}>
                   <circle cx="145" cy="145" r="136" fill="none" stroke={C.ringTrack} strokeWidth="7" />
@@ -561,22 +718,28 @@ export default function Sakinah() {
                 ))}
               </button>
             </div>
-            <div style={{ textAlign: "center", fontSize: 12, color: C.faint, marginTop: 10 }}>Tap the circle with every recitation</div>
+            <div style={{ textAlign: "center", fontSize: 12, color: C.faint, marginTop: 10 }}>
+              {dataReady ? "Tap the circle with every recitation" : "Waiting for your saved progress…"}
+            </div>
 
             <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 18 }}>
               {[33, 100].map((n) => (
-                <button key={n} onClick={() => addCount(n)}
-                  style={{ background: C.surface, color: C.ivory, border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                <button key={n} onClick={() => addCount(n)} disabled={!dataReady}
+                  style={{ background: C.surface, color: C.ivory, border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: dataReady ? 1 : 0.5 }}>
                   +{n}
                 </button>
               ))}
-              <button onClick={undoOne} aria-label="Undo one"
-                style={{ background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+              <button onClick={undoOne} disabled={!dataReady} aria-label="Undo one"
+                style={{ background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 12, padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13, opacity: dataReady ? 1 : 0.5 }}>
                 <RotateCcw size={14} /> Undo
               </button>
             </div>
 
-            <div style={{ marginTop: 26, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: 18 }}>
+            <div style={{ marginTop: 22, textAlign: "center", fontSize: 12.5, color: C.faint, fontStyle: "italic", lineHeight: 1.5, padding: "0 10px" }}>
+              {NIYAT[niyatIdx]}
+            </div>
+
+            <div style={{ marginTop: 22, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: 18 }}>
               <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: "uppercase", color: CAT_COLOR[daily.c], marginBottom: 6 }}>Today's reminder · {daily.c}</div>
               <div className="display" style={{ fontSize: 19, fontWeight: 600, marginBottom: 6 }}>{daily.t}</div>
               <div style={{ fontSize: 14, color: C.muted, lineHeight: 1.55 }}>{daily.b}</div>
@@ -612,65 +775,70 @@ export default function Sakinah() {
           </div>
         )}
 
-        {/* LEADERBOARD */}
+        {/* UMMAH — presence, not ranking */}
         {tab === "board" && (
           <div className="fadeUp">
-            <div className="display" style={{ fontSize: 21, fontWeight: 600, marginBottom: 4 }}>The Ummah Board</div>
-            <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 14 }}>Believers active in the last 48 hours, keeping the streak alive together.</div>
+            <div className="display" style={{ fontSize: 21, fontWeight: 600, marginBottom: 4 }}>The Ummah, Right Now</div>
+            <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
+              Not a ranking — just company. No positions, no totals, no comparison.
+            </div>
 
+            {ummahActive !== null && (
+              <div style={{ background: C.surface2, border: `1px solid ${C.gold}44`, borderRadius: 16, padding: 20, marginBottom: 12, textAlign: "center" }}>
+                <div className="display" style={{ fontSize: 34, fontWeight: 600, color: C.goldBright }}>{ummahActive.toLocaleString()}</div>
+                <div style={{ fontSize: 13, color: C.muted, marginTop: 2 }}>believers making istighfar with you today</div>
+              </div>
+            )}
             {ummahTotal !== null && (
-              <div style={{ background: C.surface2, border: `1px solid ${C.gold}44`, borderRadius: 16, padding: 18, marginBottom: 14, textAlign: "center" }}>
-                <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: "uppercase", color: C.gold, marginBottom: 6 }}>🤲 Together as one Ummah</div>
-                <div className="display" style={{ fontSize: 32, fontWeight: 600, color: C.goldBright }}>{ummahTotal.toLocaleString()}</div>
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>istighfar made through this app — every member counted, seen and unseen</div>
+              <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 14, marginBottom: 16, textAlign: "center" }}>
+                <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: "uppercase", color: C.gold, marginBottom: 4 }}>🤲 Together as one Ummah</div>
+                <div className="display" style={{ fontSize: 22, fontWeight: 600 }}>{ummahTotal.toLocaleString()}</div>
+                <div style={{ fontSize: 11.5, color: C.faint, marginTop: 2 }}>istighfar through this app — every member counted, seen and unseen</div>
               </div>
             )}
 
-            {boardLoading && <div style={{ color: C.faint, fontSize: 14, padding: 20, textAlign: "center" }}>Loading the ummah…</div>}
+            {boardLoading && <div style={{ color: C.faint, fontSize: 14, padding: 20, textAlign: "center" }}>Loading…</div>}
             {!boardLoading && board && board.length === 0 && (
               <div style={{ color: C.muted, fontSize: 13.5, background: C.surface, borderRadius: 14, padding: 20, textAlign: "center", lineHeight: 1.6 }}>
-                No active members in the last 48 hours — be the one who revives the board. 🔥
+                No one visible right now — but those who conceal their worship are never counted as absent. 🌙
               </div>
             )}
-            {!boardLoading && board && board.map((p, i) => {
+            {!boardLoading && board && board.map((p) => {
               const isMe = p.id === session.user.id;
-              const todayValid = p.today_date === today;
+              const band = bandFor(p.streak || 0);
               return (
                 <div key={p.id} style={{
                   display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", marginBottom: 8,
                   background: isMe ? C.surface2 : C.surface, borderRadius: 14,
                   border: `1px solid ${isMe ? C.gold + "66" : C.line}`,
                 }}>
-                  <div className="display" style={{ width: 30, fontSize: 17, fontWeight: 600, color: i < 3 ? C.goldBright : C.faint, textAlign: "center" }}>{i + 1}</div>
+                  <div style={{ fontSize: 20 }}>{p.country_flag || "🌍"}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {p.country_flag && <span style={{ marginRight: 6 }}>{p.country_flag}</span>}
                       {p.name}{isMe && <span style={{ color: C.gold, fontSize: 11, marginLeft: 6 }}>you</span>}
                     </div>
-                    <div style={{ fontSize: 11.5, color: C.faint }}>{(p.total_count || 0).toLocaleString()} lifetime · {todayValid ? p.today_count : 0} today</div>
+                    <div style={{ fontSize: 11.5, color: band.color }}>{band.label}</div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <Flame size={14} color={p.streak > 0 ? C.gold : C.faint} fill={p.streak > 0 ? C.gold : "none"} />
-                    <span style={{ fontSize: 15, fontWeight: 700, color: p.streak > 0 ? C.goldBright : C.muted }}>{p.streak}</span>
-                  </div>
+                  <Flame size={15} color={p.streak > 0 ? C.gold : C.faint} fill={p.streak > 0 ? C.gold : "none"} />
                 </div>
               );
             })}
             {!boardLoading && (
               <button onClick={loadBoard} style={{ width: "100%", marginTop: 6, background: "transparent", color: C.muted, border: `1px dashed ${C.line}`, borderRadius: 12, padding: 11, cursor: "pointer", fontSize: 13 }}>
-                Refresh board
+                Refresh
               </button>
             )}
           </div>
         )}
 
-        {/* JOURNEY */}
+        {/* JOURNEY + SETTINGS */}
         {tab === "journey" && (
           <div className="fadeUp">
             <div className="display" style={{ fontSize: 21, fontWeight: 600, marginBottom: 4 }}>The 6-Month Journey</div>
             <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 18, lineHeight: 1.55 }}>
               1,000 istighfar a day, for 180 days. A commitment of the heart — and Allah's promises are true.
             </div>
+
             <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: 20, marginBottom: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
                 <span className="display" style={{ fontSize: 34, fontWeight: 600, color: C.goldBright }}>{completedDays}</span>
@@ -680,11 +848,12 @@ export default function Sakinah() {
                 <div style={{ height: "100%", width: `${Math.min((completedDays / JOURNEY_DAYS) * 100, 100)}%`, background: `linear-gradient(90deg, ${C.gold}, ${C.goldBright})`, borderRadius: 999, transition: "width .5s ease" }} />
               </div>
             </div>
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               {[
                 { label: "Current streak", value: `${streak} days` },
+                { label: "Consistency", value: myBand.label },
                 { label: "Lifetime istighfar", value: totalAll.toLocaleString() },
-                { label: "Today", value: `${todayCount} / ${DAILY_GOAL}` },
                 { label: "Journey remaining", value: `${Math.max(JOURNEY_DAYS - completedDays, 0)} days` },
               ].map((s) => (
                 <div key={s.label} style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 14 }}>
@@ -693,6 +862,7 @@ export default function Sakinah() {
                 </div>
               ))}
             </div>
+
             <div style={{ marginTop: 16, background: C.surface2, borderRadius: 16, padding: 18, border: `1px solid ${C.line}` }}>
               <div className="amiri" style={{ fontSize: 21, color: C.goldBright, textAlign: "center", lineHeight: 2 }}>
                 فَقُلْتُ اسْتَغْفِرُوا رَبَّكُمْ إِنَّهُ كَانَ غَفَّارًا
@@ -700,6 +870,71 @@ export default function Sakinah() {
               <div style={{ fontSize: 12.5, color: C.muted, textAlign: "center", marginTop: 6, fontStyle: "italic" }}>
                 "Ask forgiveness of your Lord — indeed, He is ever a Perpetual Forgiver." — Surah Nuh 71:10
               </div>
+            </div>
+
+            {/* ---------- SETTINGS ---------- */}
+            <div className="display" style={{ fontSize: 19, fontWeight: 600, margin: "30px 0 10px" }}>Settings</div>
+
+            <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
+              <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint, marginBottom: 10 }}>Who can see you</div>
+              {[
+                { id: "anon", label: "Anonymous — alias and flag only" },
+                { id: "private", label: "Hidden deed — visible to no one" },
+                { id: "name", label: "Show my name" },
+              ].map((v) => {
+                const active = profile.visibility === v.id;
+                return (
+                  <button key={v.id} onClick={() => updateVisibility(v.id)}
+                    style={{ display: "block", width: "100%", textAlign: "left", background: active ? C.surface2 : "transparent", border: `1px solid ${active ? C.gold : C.line}`, borderRadius: 10, padding: "10px 12px", marginBottom: 6, color: active ? C.goldBright : C.ivory, fontSize: 13.5, cursor: "pointer" }}>
+                    {active ? "● " : "○ "}{v.label}
+                  </button>
+                );
+              })}
+              <div style={{ fontSize: 11.5, color: C.faint, marginTop: 6, lineHeight: 1.5 }}>
+                Currently shown as: {profile.country_flag} {profile.visibility === "private" ? "— hidden from everyone" : profile.name}
+              </div>
+            </div>
+
+            <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
+              <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint, marginBottom: 6 }}>Home timezone</div>
+              <div style={{ fontSize: 13.5, marginBottom: 8 }}>{profile.timezone || "Asia/Kolkata"}</div>
+              <div style={{ fontSize: 11.5, color: C.faint, lineHeight: 1.5, marginBottom: 10 }}>
+                Your day starts and ends in this zone, so travelling never breaks your streak.
+              </div>
+              <button onClick={resetTimezone}
+                style={{ background: C.surface2, color: C.ivory, border: `1px solid ${C.line}`, borderRadius: 10, padding: "9px 14px", fontSize: 13, cursor: "pointer" }}>
+                Set to this device ({deviceTz()})
+              </button>
+            </div>
+
+            <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
+              <a href="/privacy" style={{ fontSize: 13.5, color: C.gold }}>Privacy Policy →</a>
+            </div>
+
+            <div style={{ background: C.surface, border: "1px solid #4A2020", borderRadius: 14, padding: 16, marginBottom: 30 }}>
+              <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: "#C87070", marginBottom: 8 }}>Danger zone</div>
+              {!confirmDelete ? (
+                <button onClick={() => setConfirmDelete(true)}
+                  style={{ background: "transparent", color: "#C87070", border: "1px solid #6A2A2A", borderRadius: 10, padding: "10px 14px", fontSize: 13, cursor: "pointer" }}>
+                  Delete my account
+                </button>
+              ) : (
+                <>
+                  <div style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.55, marginBottom: 10 }}>
+                    This permanently removes your profile, every daily record, and your sign-in. It cannot be undone.
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={deleteAccount}
+                      style={{ background: "#8A2A2A", color: "#FFF", border: "none", borderRadius: 10, padding: "10px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                      Yes, delete everything
+                    </button>
+                    <button onClick={() => setConfirmDelete(false)}
+                      style={{ background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 10, padding: "10px 16px", fontSize: 13, cursor: "pointer" }}>
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
