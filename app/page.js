@@ -152,6 +152,52 @@ const bandFor = (streak) => {
   return { label: "Returning", color: C.faint };
 };
 
+/* ------------------------------------------------------------------ */
+/* Levels — the promises of Surah Nuh, in order.                       */
+/* Based on TOTAL completed days, not an unbroken streak: illness and  */
+/* travel should never erase years of work.                            */
+/* ------------------------------------------------------------------ */
+const LEVELS = [
+  { id: 1, name: "Qatrah", en: "A Drop", days: 0, ar: "قَطْرَة", ring: "#7FB3D5",
+    note: "Every rain begins with one drop. You have begun." },
+  { id: 2, name: "Baarish", en: "Rain", days: 180, ar: "مَطَر", ring: "#5FA8C9",
+    note: "“He will send rain to you in abundance.” — Surah Nuh 71:11" },
+  { id: 3, name: "Nahr", en: "Stream", days: 540, ar: "نَهْر", ring: "#3FAE7C",
+    note: "What fell as drops now runs as a stream." },
+  { id: 4, name: "Hadiqa", en: "Garden", days: 1080, ar: "حَدِيقَة", ring: "#C9A24B",
+    note: "“And He will make for you gardens.” — Surah Nuh 71:12" },
+  { id: 5, name: "Anhar", en: "Rivers", days: 1800, ar: "أَنْهَار", ring: "#E8CD86",
+    note: "“And He will make for you rivers.” — the last of the promises." },
+];
+const levelFor = (completedDays) => {
+  let cur = LEVELS[0];
+  for (const l of LEVELS) if (completedDays >= l.days) cur = l;
+  const next = LEVELS.find((l) => l.days > completedDays) || null;
+  return { cur, next };
+};
+
+/* Quiet personal milestones — shown only to you, never announced */
+const MILESTONES = [
+  { days: 7, label: "One week" },
+  { days: 40, label: "Chilla — forty days" },
+  { days: 100, label: "One hundred days" },
+  { days: 180, label: "The six-month journey" },
+  { days: 365, label: "One full year" },
+  { days: 540, label: "Eighteen months" },
+  { days: 1080, label: "Three years" },
+  { days: 1800, label: "Five years" },
+];
+
+/* Push helpers */
+const urlBase64ToUint8Array = (base64String) => {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base64);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+};
+
 /* Offline queue (localStorage works in a real deployed app) */
 const readQueue = () => {
   try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || "{}"); } catch { return {}; }
@@ -209,6 +255,8 @@ export default function Sakinah() {
   const [ummahActive, setUmmahActive] = useState(null);
   const [savingNote, setSavingNote] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [remindDismissed, setRemindDismissed] = useState(false);
 
   const flushTimer = useRef(null);
   const audioRef = useRef(null);
@@ -502,6 +550,68 @@ export default function Sakinah() {
     if (!error) { setProfile(data); alert("Home timezone set to " + deviceTz()); }
   };
 
+  /* ------- soft reminders (opt-in, user picks the time) ------- */
+  const enableReminders = async (time) => {
+    if (!session?.user) return;
+    const vapid = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!vapid) { alert("Reminders aren't configured yet."); return; }
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      alert("Reminders need the app to be installed on your home screen. Open the browser menu and choose “Add to Home screen”, then try again.");
+      return;
+    }
+    setPushBusy(true);
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") {
+        setPushBusy(false);
+        alert("No problem — you can turn reminders on any time from Settings.");
+        return;
+      }
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapid),
+        });
+      }
+      const { data, error } = await supabase.from("profiles").update({
+        reminder_enabled: true,
+        reminder_time: time || profile?.reminder_time || "21:00",
+        push_subscription: sub.toJSON(),
+        timezone: profile?.timezone || deviceTz(),
+      }).eq("id", session.user.id).select().single();
+      if (error) throw error;
+      setProfile(data);
+    } catch (e) {
+      console.error("reminder setup failed", e);
+      alert("Could not set the reminder: " + (e.message || e));
+    }
+    setPushBusy(false);
+  };
+
+  const disableReminders = async () => {
+    if (!session?.user) return;
+    setPushBusy(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) await sub.unsubscribe();
+    } catch (e) {}
+    const { data } = await supabase.from("profiles")
+      .update({ reminder_enabled: false, push_subscription: null })
+      .eq("id", session.user.id).select().single();
+    if (data) setProfile(data);
+    setPushBusy(false);
+  };
+
+  const updateReminderTime = async (time) => {
+    if (!session?.user) return;
+    const { data } = await supabase.from("profiles")
+      .update({ reminder_time: time }).eq("id", session.user.id).select().single();
+    if (data) setProfile(data);
+  };
+
   const deleteAccount = async () => {
     try {
       const { error } = await supabase.rpc("delete_my_account");
@@ -634,6 +744,10 @@ export default function Sakinah() {
   const daily = BENEFITS[dailyIdx];
   const benefit = BENEFITS[browseIdx];
   const myBand = bandFor(streak);
+  const { cur: level, next: nextLevel } = levelFor(completedDays);
+  const nextMilestone = MILESTONES.find((m) => m.days > completedDays) || null;
+  const showRemindPrompt =
+    !profile.reminder_enabled && !remindDismissed && completedDays >= 3;
 
   return (
     <Shell>
@@ -745,6 +859,26 @@ export default function Sakinah() {
               <div style={{ fontSize: 14, color: C.muted, lineHeight: 1.55 }}>{daily.b}</div>
               <div style={{ fontSize: 11.5, color: C.faint, marginTop: 8, fontStyle: "italic" }}>{daily.s}</div>
             </div>
+
+            {/* soft, delayed invitation — never on day one */}
+            {showRemindPrompt && (
+              <div style={{ marginTop: 14, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: 16 }}>
+                <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 4 }}>Would a daily reminder help?</div>
+                <div style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.5, marginBottom: 12 }}>
+                  One quiet message a day, at a time you choose. You can turn it off whenever you like.
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button onClick={() => setTab("journey")}
+                    style={{ background: C.gold, color: "#1B1508", fontWeight: 700, border: "none", borderRadius: 10, padding: "9px 16px", fontSize: 13, cursor: "pointer" }}>
+                    Set a time
+                  </button>
+                  <button onClick={() => setRemindDismissed(true)}
+                    style={{ background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 10, padding: "9px 16px", fontSize: 13, cursor: "pointer" }}>
+                    Not now
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -834,19 +968,70 @@ export default function Sakinah() {
         {/* JOURNEY + SETTINGS */}
         {tab === "journey" && (
           <div className="fadeUp">
-            <div className="display" style={{ fontSize: 21, fontWeight: 600, marginBottom: 4 }}>The 6-Month Journey</div>
+            <div className="display" style={{ fontSize: 21, fontWeight: 600, marginBottom: 4 }}>Your Journey</div>
             <div style={{ fontSize: 12.5, color: C.muted, marginBottom: 18, lineHeight: 1.55 }}>
-              1,000 istighfar a day, for 180 days. A commitment of the heart — and Allah's promises are true.
+              Measured in days completed, not in unbroken chains. Illness and travel take nothing away from you.
             </div>
 
-            <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: 20, marginBottom: 14 }}>
+            {/* LEVEL */}
+            <div style={{ background: C.surface2, border: `1px solid ${level.ring}55`, borderRadius: 18, padding: 20, marginBottom: 12, textAlign: "center" }}>
+              <div className="amiri" style={{ fontSize: 26, color: level.ring, lineHeight: 1.6 }}>{level.ar}</div>
+              <div className="display" style={{ fontSize: 26, fontWeight: 600, marginTop: 2 }}>{level.name}</div>
+              <div style={{ fontSize: 11, letterSpacing: 2.5, textTransform: "uppercase", color: C.faint, marginTop: 2 }}>
+                Level {level.id} · {level.en}
+              </div>
+              <div style={{ fontSize: 12.5, color: C.muted, marginTop: 10, lineHeight: 1.55, fontStyle: "italic" }}>{level.note}</div>
+
+              {nextLevel && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ height: 8, background: C.ringTrack, borderRadius: 999, overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%",
+                      width: `${Math.min(((completedDays - level.days) / (nextLevel.days - level.days)) * 100, 100)}%`,
+                      background: `linear-gradient(90deg, ${level.ring}, ${nextLevel.ring})`,
+                      borderRadius: 999, transition: "width .5s ease",
+                    }} />
+                  </div>
+                  <div style={{ fontSize: 11.5, color: C.faint, marginTop: 6 }}>
+                    {nextLevel.days - completedDays} days to {nextLevel.name} ({nextLevel.en})
+                  </div>
+                </div>
+              )}
+              {!nextLevel && (
+                <div style={{ fontSize: 12, color: C.goldBright, marginTop: 14 }}>✦ Every promise of Surah Nuh, walked through ✦</div>
+              )}
+            </div>
+
+            {/* DAYS COMPLETED */}
+            <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: 20, marginBottom: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
                 <span className="display" style={{ fontSize: 34, fontWeight: 600, color: C.goldBright }}>{completedDays}</span>
-                <span style={{ fontSize: 13, color: C.muted }}>of {JOURNEY_DAYS} days completed</span>
+                <span style={{ fontSize: 13, color: C.muted }}>
+                  {nextMilestone ? `of ${nextMilestone.days} — ${nextMilestone.label}` : "days completed"}
+                </span>
               </div>
               <div style={{ height: 10, background: C.ringTrack, borderRadius: 999, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${Math.min((completedDays / JOURNEY_DAYS) * 100, 100)}%`, background: `linear-gradient(90deg, ${C.gold}, ${C.goldBright})`, borderRadius: 999, transition: "width .5s ease" }} />
+                <div style={{
+                  height: "100%",
+                  width: `${nextMilestone ? Math.min((completedDays / nextMilestone.days) * 100, 100) : 100}%`,
+                  background: `linear-gradient(90deg, ${C.gold}, ${C.goldBright})`, borderRadius: 999, transition: "width .5s ease",
+                }} />
               </div>
+            </div>
+
+            {/* MILESTONES — quiet, personal, never announced */}
+            <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: 16, marginBottom: 12 }}>
+              <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint, marginBottom: 10 }}>Milestones</div>
+              {MILESTONES.map((m) => {
+                const done = completedDays >= m.days;
+                return (
+                  <div key={m.days} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
+                    <span style={{ fontSize: 14, color: done ? C.goldBright : C.faint, width: 18 }}>{done ? "✦" : "○"}</span>
+                    <span style={{ fontSize: 13.5, color: done ? C.ivory : C.faint, flex: 1 }}>{m.label}</span>
+                    <span style={{ fontSize: 11.5, color: C.faint }}>{m.days}d</span>
+                  </div>
+                );
+              })}
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -854,7 +1039,7 @@ export default function Sakinah() {
                 { label: "Current streak", value: `${streak} days` },
                 { label: "Consistency", value: myBand.label },
                 { label: "Lifetime istighfar", value: totalAll.toLocaleString() },
-                { label: "Journey remaining", value: `${Math.max(JOURNEY_DAYS - completedDays, 0)} days` },
+                { label: "Days completed", value: `${completedDays}` },
               ].map((s) => (
                 <div key={s.label} style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 14 }}>
                   <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint, marginBottom: 4 }}>{s.label}</div>
@@ -874,6 +1059,44 @@ export default function Sakinah() {
 
             {/* ---------- SETTINGS ---------- */}
             <div className="display" style={{ fontSize: 19, fontWeight: 600, margin: "30px 0 10px" }}>Settings</div>
+
+            {/* DAILY REMINDER — off by default, one a day, easy to stop */}
+            <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
+              <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint, marginBottom: 8 }}>Daily reminder</div>
+
+              {profile.reminder_enabled ? (
+                <>
+                  <div style={{ fontSize: 13.5, marginBottom: 10, lineHeight: 1.5 }}>
+                    On — one reminder at <b style={{ color: C.goldBright }}>{profile.reminder_time}</b>, only if the day is still incomplete.
+                  </div>
+                  <label style={{ fontSize: 11.5, color: C.faint }}>Change the time</label>
+                  <input type="time" value={profile.reminder_time || "21:00"}
+                    onChange={(e) => updateReminderTime(e.target.value)}
+                    style={{ ...inputStyle, margin: "6px 0 10px" }} />
+                  <button onClick={disableReminders} disabled={pushBusy}
+                    style={{ background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 10, padding: "9px 16px", fontSize: 13, cursor: "pointer" }}>
+                    {pushBusy ? "Please wait…" : "Turn reminders off"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.5, marginBottom: 10 }}>
+                    Off. If you turn it on, you'll get one quiet message a day at the time you choose — and nothing at all on days you've already finished.
+                  </div>
+                  <label style={{ fontSize: 11.5, color: C.faint }}>Remind me at</label>
+                  <input type="time" defaultValue={profile.reminder_time || "21:00"} id="remind-time"
+                    onChange={(e) => updateReminderTime(e.target.value)}
+                    style={{ ...inputStyle, margin: "6px 0 10px" }} />
+                  <button onClick={() => enableReminders(profile.reminder_time || "21:00")} disabled={pushBusy}
+                    style={{ background: C.gold, color: "#1B1508", fontWeight: 700, border: "none", borderRadius: 10, padding: "10px 16px", fontSize: 13.5, cursor: "pointer" }}>
+                    {pushBusy ? "Setting up…" : "Turn on the reminder"}
+                  </button>
+                  <div style={{ fontSize: 11, color: C.faint, marginTop: 8, lineHeight: 1.45 }}>
+                    Works best when the app is added to your home screen.
+                  </div>
+                </>
+              )}
+            </div>
 
             <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
               <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint, marginBottom: 10 }}>Who can see you</div>
