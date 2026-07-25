@@ -2,13 +2,13 @@ import "./globals.css";
 import RegisterSW from "./register-sw";
 
 export const metadata = {
-  title: "Sakinah — The Istighfar Companion",
-  description: "1,000 istighfar a day. Build your streak with believers around the world.",
+  title: "Mustaghfirin — 1,000 Istighfar a Day",
+  description: "Count 1,000 daily istighfar. Constancy, not counting.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Sakinah",
+    title: "Mustaghfirin",
   },
   icons: {
     icon: "/icon-192.png",
