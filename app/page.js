@@ -13,7 +13,7 @@ const C = {
   muted: "#8BA79A", faint: "#5C776C", ringTrack: "#1E3A33", warn: "#D98F4E",
 };
 
-const APP_NAME = "Sakinah";        // ← rebrand: change this one line
+const APP_NAME = "Mustaghfirin";   // “…and those who seek forgiveness before dawn.” — Quran 3:17
 const DAILY_GOAL = 1000;
 const JOURNEY_DAYS = 180;
 const QUEUE_KEY = "sakinah-queue"; // offline pending deltas
@@ -188,6 +188,45 @@ const MILESTONES = [
   { days: 1800, label: "Five years" },
 ];
 
+/* ------------------------------------------------------------------ */
+/* The intro — why a thousand.                                         */
+/* Honest on purpose: the number is a chosen commitment, not a ruling.  */
+/* ------------------------------------------------------------------ */
+const INTRO = [
+  {
+    k: "Why a thousand?",
+    h: "Let's be honest first",
+    body: "No hadith fixes the number at a thousand. The Prophet ﷺ, who carried no sin, sought forgiveness seventy to a hundred times a day.\n\nA thousand is not a ruling handed down to you. It is a commitment you choose — and that is exactly why it works.",
+    ar: null,
+  },
+  {
+    k: "The promise",
+    h: "It was never about the count",
+    body: "“Whoever keeps constant in seeking forgiveness, Allah will make for him a way out of every distress, relief from every anxiety, and provide for him from where he never imagined.”\n\nRead it again: whoever keeps constant. The promise is tied to constancy — not to a quantity.",
+    src: "Abu Dawud",
+    ar: null,
+  },
+  {
+    k: "So why a thousand?",
+    h: "Because it cannot be done carelessly",
+    body: "A hundred can be finished in one distracted minute and forgotten by noon.\n\nA thousand cannot. It has to be broken across the whole day — while waiting, walking, travelling, between tasks. It quietly forces istighfar into the corners of your life until the tongue keeps moving on its own.\n\nThat is the point. Not the number — what the number does to your day.",
+    ar: null,
+  },
+  {
+    k: "The cost",
+    h: "Ten minutes. That's all.",
+    body: "You can say Astaghfirullah a hundred times in about a minute. A thousand is roughly ten minutes, spread across sixteen waking hours.\n\nNo worship gives a higher return for so little time.",
+    ar: null,
+  },
+  {
+    k: "What is promised",
+    h: "Rain, wealth, children, gardens, rivers",
+    body: "These are not our claims. They are what Allah Himself attached to istighfar in Surah Nuh — and many people describe real change in their lives after months of holding to it.\n\nWe cannot measure that, and we won't pretend to. What we can say is this: the promises are His, and the constancy is yours.",
+    ar: "فَقُلْتُ اسْتَغْفِرُوا رَبَّكُمْ إِنَّهُ كَانَ غَفَّارًا",
+    src: "Surah Nuh 71:10",
+  },
+];
+
 /* Push helpers */
 const urlBase64ToUint8Array = (base64String) => {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -230,7 +269,7 @@ const Shell = ({ children }) => (
 );
 
 /* ================================================================== */
-export default function Sakinah() {
+export default function Mustaghfirin() {
   const [session, setSession] = useState(undefined);
   const [profile, setProfile] = useState(undefined);
   const [days, setDays] = useState({});
@@ -257,6 +296,7 @@ export default function Sakinah() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const [remindDismissed, setRemindDismissed] = useState(false);
+  const [introStep, setIntroStep] = useState(null); // null = not showing
 
   const flushTimer = useRef(null);
   const audioRef = useRef(null);
@@ -276,6 +316,9 @@ export default function Sakinah() {
     setDailyIdx(doy % BENEFITS.length);
     setBrowseIdx(Math.floor(Math.random() * BENEFITS.length));
     setNiyatIdx(Math.floor(Math.random() * NIYAT.length));
+    try {
+      if (!localStorage.getItem("intro-seen")) setIntroStep(0);
+    } catch (e) {}
   }, []);
 
   /* ------- auth session ------- */
@@ -627,6 +670,58 @@ export default function Sakinah() {
   /* ================================================================ */
   /* Screens                                                          */
   /* ================================================================ */
+
+  /* ------- the intro: why a thousand ------- */
+  if (introStep !== null) {
+    const s = INTRO[introStep];
+    const last = introStep === INTRO.length - 1;
+    const finish = () => {
+      try { localStorage.setItem("intro-seen", "1"); } catch (e) {}
+      setIntroStep(null);
+    };
+    return (
+      <Shell>
+        <div style={{ maxWidth: 460, margin: "0 auto", padding: "36px 22px 40px", position: "relative", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+          {/* progress pips */}
+          <div style={{ display: "flex", gap: 6, marginBottom: 28 }}>
+            {INTRO.map((_, i) => (
+              <div key={i} style={{ flex: 1, height: 3, borderRadius: 99, background: i <= introStep ? C.gold : C.line }} />
+            ))}
+          </div>
+
+          <div className="fadeUp" key={introStep} style={{ flex: 1 }}>
+            <div style={{ fontSize: 10.5, letterSpacing: 3, textTransform: "uppercase", color: C.gold, marginBottom: 12 }}>{s.k}</div>
+            <div className="display" style={{ fontSize: 30, fontWeight: 600, lineHeight: 1.25, marginBottom: 18 }}>{s.h}</div>
+            {s.ar && (
+              <div className="amiri" style={{ fontSize: 25, color: C.goldBright, lineHeight: 2, marginBottom: 14, textAlign: "center" }}>{s.ar}</div>
+            )}
+            <div style={{ fontSize: 15.5, color: C.muted, lineHeight: 1.75, whiteSpace: "pre-line" }}>{s.body}</div>
+            {s.src && (
+              <div style={{ fontSize: 12, color: C.faint, marginTop: 14, fontStyle: "italic" }}>— {s.src}</div>
+            )}
+          </div>
+
+          <div style={{ marginTop: 28 }}>
+            <button onClick={() => (last ? finish() : setIntroStep(introStep + 1))} style={goldBtn}>
+              {last ? "Begin" : "Continue"}
+            </button>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
+              <button onClick={() => introStep > 0 && setIntroStep(introStep - 1)}
+                style={{ background: "none", border: "none", color: introStep > 0 ? C.muted : "transparent", fontSize: 13, cursor: "pointer", padding: 4 }}>
+                ← Back
+              </button>
+              {!last && (
+                <button onClick={finish} style={{ background: "none", border: "none", color: C.faint, fontSize: 13, cursor: "pointer", padding: 4 }}>
+                  Skip
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </Shell>
+    );
+  }
+
   if (session === undefined) {
     return <Shell><div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>Opening…</div></Shell>;
   }
@@ -1128,6 +1223,14 @@ export default function Sakinah() {
                 style={{ background: C.surface2, color: C.ivory, border: `1px solid ${C.line}`, borderRadius: 10, padding: "9px 14px", fontSize: 13, cursor: "pointer" }}>
                 Set to this device ({deviceTz()})
               </button>
+            </div>
+
+            <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
+              <button onClick={() => setIntroStep(0)}
+                style={{ background: "none", border: "none", color: C.gold, fontSize: 13.5, cursor: "pointer", padding: 0 }}>
+                Why a thousand? →
+              </button>
+              <div style={{ fontSize: 11.5, color: C.faint, marginTop: 4 }}>Read the reasoning again, any time.</div>
             </div>
 
             <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
