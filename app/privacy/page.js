@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Privacy Policy — Sakinah",
-  description: "How Sakinah handles your data.",
+  title: "Privacy Policy — Mustaghfirin",
+  description: "How Mustaghfirin handles your data.",
 };
 
 const box = {
@@ -21,7 +21,7 @@ export default function Privacy() {
         <p style={{ ...p, marginTop: 6, fontSize: 13, color: "#5C776C" }}>Last updated: 24 July 2026</p>
 
         <p style={{ ...p, marginTop: 18 }}>
-          Sakinah is a personal worship companion for counting istighfar. This policy explains, in plain
+          Mustaghfirin is a personal worship companion for counting istighfar. This policy explains, in plain
           language, exactly what we store and what we do not.
         </p>
 
@@ -86,7 +86,7 @@ export default function Privacy() {
 
         <h2 style={h2}>Children</h2>
         <p style={p}>
-          Sakinah is a general-audience worship tool and is not directed at children under 13.
+          Mustaghfirin is a general-audience worship tool and is not directed at children under 13.
         </p>
 
         <h2 style={h2}>Changes</h2>
@@ -101,7 +101,7 @@ export default function Privacy() {
         </p>
 
         <p style={{ ...p, marginTop: 34, fontSize: 13, color: "#5C776C" }}>
-          <a href="/" style={{ color: "#C9A24B" }}>← Back to Sakinah</a>
+          <a href="/" style={{ color: "#C9A24B" }}>← Back to Mustaghfirin</a>
         </p>
       </div>
     </div>
