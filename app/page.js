@@ -200,6 +200,13 @@ const INTRO = [
     ar: null,
   },
   {
+    k: "One honest thing",
+    h: "This is only a tracker",
+    body: "Counting on your fingers is the Sunnah — the Prophet ﷺ counted dhikr on his right hand, and taught that the fingers will be asked, and will speak, on the Day of Judgement.\n\nYour fingers, a tasbeeh, or a simple counter are all better than a screen. This app only keeps the tally for you when it helps you stay constant. Never let the phone come between you and the dhikr.",
+    src: "Abu Dawud, Tirmidhi",
+    ar: null,
+  },
+  {
     k: "The promise",
     h: "It was never about the count",
     body: "“Whoever keeps constant in seeking forgiveness, Allah will make for him a way out of every distress, relief from every anxiety, and provide for him from where he never imagined.”\n\nRead it again: whoever keeps constant. The promise is tied to constancy — not to a quantity.",
