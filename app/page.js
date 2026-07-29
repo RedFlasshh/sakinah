@@ -1241,6 +1241,13 @@ export default function Mustaghfirin() {
             </div>
 
             <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 600, marginBottom: 6, color: C.goldBright }}>This is only a tracker</div>
+              <div style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.6 }}>
+                Counting on your fingers is the Sunnah — the Prophet ﷺ counted on his right hand, and the fingers will testify on the Day of Judgement. A tasbeeh, a counter, or your fingers are all better than a screen. This app only keeps the tally when that helps.
+              </div>
+            </div>      
+
+            <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
               <a href="/privacy" style={{ fontSize: 13.5, color: C.gold }}>Privacy Policy →</a>
             </div>
 
