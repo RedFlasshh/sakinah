@@ -25,49 +25,49 @@ const LANG_KEY = "app-lang";
 /* 60 benefits                                                         */
 /* ------------------------------------------------------------------ */
 const BENEFITS = [
-  { t: "Abundant Rain", b: "\u201cAsk forgiveness of your Lord\u2026 He will send rain to you in abundance.\u201d", s: "Quran \u2014 Nuh 71:10\u201311", c: "Quran" },
-  { t: "Increase in Wealth", b: "Istighfar carries a divine promise of increase in wealth.", s: "Quran \u2014 Nuh 71:12", c: "Quran" },
-  { t: "Increase in Children", b: "Allah promises offspring to those who seek His forgiveness.", s: "Quran \u2014 Nuh 71:12", c: "Quran" },
-  { t: "Gardens", b: "Allah promises gardens \u2014 blessings in this world and Paradise in the next.", s: "Quran \u2014 Nuh 71:12", c: "Quran" },
-  { t: "Rivers", b: "Flowing rivers: a symbol of continuous, renewing blessing.", s: "Quran \u2014 Nuh 71:12", c: "Quran" },
-  { t: "Good Provision", b: "\u201cSeek forgiveness of your Lord and repent to Him \u2014 He will let you enjoy a good provision.\u201d", s: "Quran \u2014 Hud 11:3", c: "Quran" },
-  { t: "Allah's Favour", b: "Allah grants His favour to every doer of good who seeks His forgiveness.", s: "Quran \u2014 Hud 11:3", c: "Quran" },
-  { t: "Strength Upon Strength", b: "Istighfar brings added strength \u2014 physical, spiritual, and in resolve.", s: "Quran \u2014 Hud 11:52", c: "Quran" },
-  { t: "Shield from Punishment", b: "\u201cAllah would not punish them while they seek forgiveness.\u201d", s: "Quran \u2014 Al-Anfal 8:33", c: "Quran" },
-  { t: "Guaranteed Forgiveness", b: "He is Al-Ghaffar, the Perpetual Forgiver. No sincere istighfar is wasted.", s: "Quran \u2014 Nuh 71:10", c: "Quran" },
-  { t: "Allah's Love", b: "\u201cIndeed, Allah loves those who repent and those who purify themselves.\u201d", s: "Quran \u2014 Al-Baqarah 2:222", c: "Quran" },
-  { t: "Never Despair", b: "Allah's mercy covers all sins. The door of istighfar never closes.", s: "Quran \u2014 Az-Zumar 39:53", c: "Quran" },
-  { t: "A Beautiful Life", b: "Istighfar brings ease and enjoyment in the life you've been given.", s: "Quran \u2014 Hud 11:3", c: "Quran" },
-  { t: "A Way Out of Every Distress", b: "\u201cIf anyone constantly seeks pardon, Allah will appoint for him a way out of every distress.\u201d", s: "Hadith \u2014 Abu Dawud", c: "Hadith" },
-  { t: "Relief from Every Anxiety", b: "Constant istighfar brings relief from every anxiety.", s: "Hadith \u2014 Abu Dawud", c: "Hadith" },
-  { t: "Rizq from Unexpected Sources", b: "Allah provides for the seeker of forgiveness from where he never imagined.", s: "Hadith \u2014 Abu Dawud", c: "Hadith" },
-  { t: "A Path Out of Poverty", b: "Regular istighfar opens a path out of poverty and difficulty.", s: "Hadith \u2014 Ibn Majah", c: "Hadith" },
-  { t: "Sorrow \u2192 Contentment", b: "Hardship is removed and replaced with prosperity and contentment.", s: "Hadith \u2014 Ibn Majah", c: "Hadith" },
-  { t: "The Prophet's \uFDFA Habit", b: "He was sinless, yet sought forgiveness 70\u2013100 times daily. What's our excuse?", s: "Hadith \u2014 Bukhari & Muslim", c: "Hadith" },
-  { t: "Your Duas Get Accepted", b: "Seek forgiveness for believing men and women daily, and be counted among those whose dua is accepted.", s: "Hadith \u2014 Ibn Majah", c: "Hadith" },
-  { t: "Others Blessed Through You", b: "Through the barakah of such a person, people on earth receive sustenance.", s: "Hadith \u2014 Ibn Majah", c: "Hadith" },
-  { t: "Allah Forgives All Sins", b: "\u201cYou sin by night and day, and I forgive all sins \u2014 so seek forgiveness of Me.\u201d", s: "Hadith Qudsi \u2014 Muslim", c: "Hadith" },
-  { t: "The Best of Sinners", b: "\u201cAll the sons of Adam are sinners, but the best of sinners are those who repent.\u201d", s: "Hadith \u2014 Tirmidhi", c: "Hadith" },
-  { t: "Sayyidul Istighfar = Paradise", b: "Recite the Master of Forgiveness with conviction morning or evening \u2014 a promise of Paradise.", s: "Hadith \u2014 Bukhari", c: "Hadith" },
-  { t: "No Sin Too Great", b: "A specific istighfar formula brings forgiveness even for the gravest lapses.", s: "Hadith \u2014 Abu Dawud, Tirmidhi", c: "Hadith" },
-  { t: "Allah's Hand Is Extended", b: "He extends His hand by day for the night's sinner, and by night for the day's sinner.", s: "Hadith \u2014 Muslim", c: "Hadith" },
-  { t: "Allah Rejoices at Your Return", b: "Allah is more pleased with your repentance than a traveller who finds his lost camel in the desert.", s: "Hadith \u2014 Bukhari & Muslim", c: "Hadith" },
-  { t: "Glad Tidings", b: "Blessed is the one who finds abundant istighfar in his book of deeds.", s: "Hadith \u2014 Ibn Majah", c: "Hadith" },
-  { t: "Polish for the Heart", b: "Sins leave dark spots on the heart; istighfar polishes it back to shine.", s: "Hadith \u2014 Tirmidhi", c: "Hadith" },
-  { t: "Shaytan's Frustration", b: "Shaytan destroys through sins; Allah counters everything through istighfar.", s: "Hadith \u2014 Ahmad", c: "Hadith" },
-  { t: "The Answer to Drought", b: "A man complained of no rain. Hasan al-Basri said: \u201cSeek Allah's forgiveness.\u201d", s: "Hasan al-Basri \u2014 Tafsir al-Qurtubi", c: "Scholars" },
-  { t: "The Answer to Poverty", b: "Another complained of poverty. The same answer: \u201cSeek Allah's forgiveness.\u201d", s: "Hasan al-Basri", c: "Scholars" },
-  { t: "The Answer to Childlessness", b: "A third begged for a child. Again: \u201cSeek Allah's forgiveness.\u201d", s: "Hasan al-Basri", c: "Scholars" },
+  { t: "Abundant Rain", b: "“Ask forgiveness of your Lord… He will send rain to you in abundance.”", s: "Quran — Nuh 71:10–11", c: "Quran" },
+  { t: "Increase in Wealth", b: "Istighfar carries a divine promise of increase in wealth.", s: "Quran — Nuh 71:12", c: "Quran" },
+  { t: "Increase in Children", b: "Allah promises offspring to those who seek His forgiveness.", s: "Quran — Nuh 71:12", c: "Quran" },
+  { t: "Gardens", b: "Allah promises gardens — blessings in this world and Paradise in the next.", s: "Quran — Nuh 71:12", c: "Quran" },
+  { t: "Rivers", b: "Flowing rivers: a symbol of continuous, renewing blessing.", s: "Quran — Nuh 71:12", c: "Quran" },
+  { t: "Good Provision", b: "“Seek forgiveness of your Lord and repent to Him — He will let you enjoy a good provision.”", s: "Quran — Hud 11:3", c: "Quran" },
+  { t: "Allah's Favour", b: "Allah grants His favour to every doer of good who seeks His forgiveness.", s: "Quran — Hud 11:3", c: "Quran" },
+  { t: "Strength Upon Strength", b: "Istighfar brings added strength — physical, spiritual, and in resolve.", s: "Quran — Hud 11:52", c: "Quran" },
+  { t: "Shield from Punishment", b: "“Allah would not punish them while they seek forgiveness.”", s: "Quran — Al-Anfal 8:33", c: "Quran" },
+  { t: "Guaranteed Forgiveness", b: "He is Al-Ghaffar, the Perpetual Forgiver. No sincere istighfar is wasted.", s: "Quran — Nuh 71:10", c: "Quran" },
+  { t: "Allah's Love", b: "“Indeed, Allah loves those who repent and those who purify themselves.”", s: "Quran — Al-Baqarah 2:222", c: "Quran" },
+  { t: "Never Despair", b: "Allah's mercy covers all sins. The door of istighfar never closes.", s: "Quran — Az-Zumar 39:53", c: "Quran" },
+  { t: "A Beautiful Life", b: "Istighfar brings ease and enjoyment in the life you've been given.", s: "Quran — Hud 11:3", c: "Quran" },
+  { t: "A Way Out of Every Distress", b: "“If anyone constantly seeks pardon, Allah will appoint for him a way out of every distress.”", s: "Hadith — Abu Dawud", c: "Hadith" },
+  { t: "Relief from Every Anxiety", b: "Constant istighfar brings relief from every anxiety.", s: "Hadith — Abu Dawud", c: "Hadith" },
+  { t: "Rizq from Unexpected Sources", b: "Allah provides for the seeker of forgiveness from where he never imagined.", s: "Hadith — Abu Dawud", c: "Hadith" },
+  { t: "A Path Out of Poverty", b: "Regular istighfar opens a path out of poverty and difficulty.", s: "Hadith — Ibn Majah", c: "Hadith" },
+  { t: "Sorrow → Contentment", b: "Hardship is removed and replaced with prosperity and contentment.", s: "Hadith — Ibn Majah", c: "Hadith" },
+  { t: "The Prophet's ﷺ Habit", b: "He was sinless, yet sought forgiveness 70–100 times daily. What's our excuse?", s: "Hadith — Bukhari & Muslim", c: "Hadith" },
+  { t: "Your Duas Get Accepted", b: "Seek forgiveness for believing men and women daily, and be counted among those whose dua is accepted.", s: "Hadith — Ibn Majah", c: "Hadith" },
+  { t: "Others Blessed Through You", b: "Through the barakah of such a person, people on earth receive sustenance.", s: "Hadith — Ibn Majah", c: "Hadith" },
+  { t: "Allah Forgives All Sins", b: "“You sin by night and day, and I forgive all sins — so seek forgiveness of Me.”", s: "Hadith Qudsi — Muslim", c: "Hadith" },
+  { t: "The Best of Sinners", b: "“All the sons of Adam are sinners, but the best of sinners are those who repent.”", s: "Hadith — Tirmidhi", c: "Hadith" },
+  { t: "Sayyidul Istighfar = Paradise", b: "Recite the Master of Forgiveness with conviction morning or evening — a promise of Paradise.", s: "Hadith — Bukhari", c: "Hadith" },
+  { t: "No Sin Too Great", b: "A specific istighfar formula brings forgiveness even for the gravest lapses.", s: "Hadith — Abu Dawud, Tirmidhi", c: "Hadith" },
+  { t: "Allah's Hand Is Extended", b: "He extends His hand by day for the night's sinner, and by night for the day's sinner.", s: "Hadith — Muslim", c: "Hadith" },
+  { t: "Allah Rejoices at Your Return", b: "Allah is more pleased with your repentance than a traveller who finds his lost camel in the desert.", s: "Hadith — Bukhari & Muslim", c: "Hadith" },
+  { t: "Glad Tidings", b: "Blessed is the one who finds abundant istighfar in his book of deeds.", s: "Hadith — Ibn Majah", c: "Hadith" },
+  { t: "Polish for the Heart", b: "Sins leave dark spots on the heart; istighfar polishes it back to shine.", s: "Hadith — Tirmidhi", c: "Hadith" },
+  { t: "Shaytan's Frustration", b: "Shaytan destroys through sins; Allah counters everything through istighfar.", s: "Hadith — Ahmad", c: "Hadith" },
+  { t: "The Answer to Drought", b: "A man complained of no rain. Hasan al-Basri said: “Seek Allah's forgiveness.”", s: "Hasan al-Basri — Tafsir al-Qurtubi", c: "Scholars" },
+  { t: "The Answer to Poverty", b: "Another complained of poverty. The same answer: “Seek Allah's forgiveness.”", s: "Hasan al-Basri", c: "Scholars" },
+  { t: "The Answer to Childlessness", b: "A third begged for a child. Again: “Seek Allah's forgiveness.”", s: "Hasan al-Basri", c: "Scholars" },
   { t: "The Answer to Barren Land", b: "A fourth complained his garden had dried. Same prescription: istighfar.", s: "Hasan al-Basri", c: "Scholars" },
-  { t: "The Answer to Debt", b: "Burdened by debt? The scholars' prescription was istighfar \u2014 then effort.", s: "Hasan al-Basri", c: "Scholars" },
-  { t: "One Solution, Many Problems", b: "Asked why one answer for all complaints, Hasan al-Basri simply recited Surah Nuh 71:10\u201312.", s: "Scholars", c: "Scholars" },
-  { t: "The Baker & Imam Ahmad", b: "A baker's constant istighfar meant every dua was answered \u2014 even meeting Imam Ahmad himself.", s: "Classical anecdote", c: "Scholars" },
-  { t: "Istighfar Before Dua", b: "Begin your dua with istighfar, as Prophet Sulaiman (AS) did \u2014 it opens the door of acceptance.", s: "Scholars \u2014 on Quran 38:35", c: "Scholars" },
+  { t: "The Answer to Debt", b: "Burdened by debt? The scholars' prescription was istighfar — then effort.", s: "Hasan al-Basri", c: "Scholars" },
+  { t: "One Solution, Many Problems", b: "Asked why one answer for all complaints, Hasan al-Basri simply recited Surah Nuh 71:10–12.", s: "Scholars", c: "Scholars" },
+  { t: "The Baker & Imam Ahmad", b: "A baker's constant istighfar meant every dua was answered — even meeting Imam Ahmad himself.", s: "Classical anecdote", c: "Scholars" },
+  { t: "Istighfar Before Dua", b: "Begin your dua with istighfar, as Prophet Sulaiman (AS) did — it opens the door of acceptance.", s: "Scholars — on Quran 38:35", c: "Scholars" },
   { t: "Sealing Your Good Deeds", b: "Istighfar after salah and good deeds patches the imperfections in our worship.", s: "Scholars", c: "Scholars" },
-  { t: "The Security That Remains", b: "Two protections from punishment existed: the Prophet \uFDFA among us, and istighfar. One remains.", s: "Scholars \u2014 on Quran 8:33", c: "Scholars" },
-  { t: "Anxiety Melts Away", b: "When anxiety surrounds you, keep saying Astaghfirullah \u2014 it calms the heart.", s: "Reflection", c: "Reflection" },
+  { t: "The Security That Remains", b: "Two protections from punishment existed: the Prophet ﷺ among us, and istighfar. One remains.", s: "Scholars — on Quran 8:33", c: "Scholars" },
+  { t: "Anxiety Melts Away", b: "When anxiety surrounds you, keep saying Astaghfirullah — it calms the heart.", s: "Reflection", c: "Reflection" },
   { t: "Lifts Heaviness", b: "In moments of sadness and frustration, istighfar soothes the soul.", s: "Reflection", c: "Reflection" },
-  { t: "A Living Reminder", b: "Constant istighfar keeps you conscious that Allah sees everything \u2014 the strongest shield against sin.", s: "Reflection", c: "Reflection" },
+  { t: "A Living Reminder", b: "Constant istighfar keeps you conscious that Allah sees everything — the strongest shield against sin.", s: "Reflection", c: "Reflection" },
   { t: "Builds Humility", b: "Admitting fault daily kills arrogance at its root.", s: "Reflection", c: "Reflection" },
   { t: "Releases Guilt", b: "Guilt carried silently becomes poison; istighfar converts it into closeness to Allah.", s: "Reflection", c: "Reflection" },
   { t: "Strengthens Your Bond", b: "Every Astaghfirullah is a private conversation with your Creator.", s: "Reflection", c: "Reflection" },
@@ -77,10 +77,10 @@ const BENEFITS = [
   { t: "Door of Mercy", b: "Istighfar is described by scholars as the key that opens Allah's mercy.", s: "Scholars & Reflection", c: "Reflection" },
   { t: "Door of Knowledge", b: "A purified heart absorbs beneficial knowledge faster.", s: "Scholars & Reflection", c: "Reflection" },
   { t: "Daily Self-Improvement", b: "Istighfar is Islam's built-in daily retrospective: reflect, correct, restart.", s: "Reflection", c: "Reflection" },
-  { t: "Sakinah \u2014 Inner Peace", b: "Tranquility settles on the tongue that stays moist with istighfar.", s: "Reflection", c: "Reflection" },
+  { t: "Sakinah — Inner Peace", b: "Tranquility settles on the tongue that stays moist with istighfar.", s: "Reflection", c: "Reflection" },
   { t: "Unblocks What Sins Blocked", b: "Sins block rizq and opportunities; istighfar removes the blockage.", s: "Scholars", c: "Reflection" },
   { t: "The Best Minute", b: "You can say Astaghfirullah 100 times in one minute. No worship gives higher return on time.", s: "Reflection", c: "Reflection" },
-  { t: "A Tongue Moist with Dhikr", b: "Istighfar keeps you constantly in Allah's remembrance \u2014 among the most beloved deeds.", s: "Reflection", c: "Reflection" },
+  { t: "A Tongue Moist with Dhikr", b: "Istighfar keeps you constantly in Allah's remembrance — among the most beloved deeds.", s: "Reflection", c: "Reflection" },
   { t: "Gateway to Paradise", b: "Forgiveness of sins is the road; istighfar is the vehicle.", s: "Reflection", c: "Reflection" },
   { t: "Purifies the Soul", b: "Istighfar erases sins and washes the soul clean, again and again.", s: "Reflection", c: "Reflection" },
   { t: "Antidote to Despair", b: "Hopelessness is Shaytan's weapon; istighfar is the believer's answer.", s: "Reflection", c: "Reflection" },
@@ -92,24 +92,24 @@ const CAT_COLOR = { Quran: "#C9A24B", Hadith: "#3FAE7C", Scholars: "#7FB3D5", Re
 /* Niyat reminders — the app humbling its own gamification */
 const NIYAT = [
   "This count is for Allah, not for the board. Check your intention.",
-  "\u201cActions are judged by intentions.\u201d \u2014 Bukhari & Muslim",
+  "“Actions are judged by intentions.” — Bukhari & Muslim",
   "The best deed may be the one no one ever sees.",
-  "No number here is recorded with Allah \u2014 only what was sincere.",
+  "No number here is recorded with Allah — only what was sincere.",
 ];
 
 const COUNTRIES = [
-  ["\uD83C\uDDEE\uD83C\uDDF3", "India"], ["\uD83C\uDDF5\uD83C\uDDF0", "Pakistan"], ["\uD83C\uDDE7\uD83C\uDDE9", "Bangladesh"], ["\uD83C\uDDF8\uD83C\uDDE6", "Saudi Arabia"], ["\uD83C\uDDE6\uD83C\uDDEA", "UAE"],
-  ["\uD83C\uDDEE\uD83C\uDDE9", "Indonesia"], ["\uD83C\uDDF2\uD83C\uDDFE", "Malaysia"], ["\uD83C\uDDF9\uD83C\uDDF7", "T\u00fcrkiye"], ["\uD83C\uDDEA\uD83C\uDDEC", "Egypt"], ["\uD83C\uDDF3\uD83C\uDDEC", "Nigeria"],
-  ["\uD83C\uDDFA\uD83C\uDDF8", "USA"], ["\uD83C\uDDEC\uD83C\uDDE7", "UK"], ["\uD83C\uDDE8\uD83C\uDDE6", "Canada"], ["\uD83C\uDDE6\uD83C\uDDFA", "Australia"], ["\uD83C\uDDFF\uD83C\uDDE6", "South Africa"],
-  ["\uD83C\uDDF6\uD83C\uDDE6", "Qatar"], ["\uD83C\uDDF0\uD83C\uDDFC", "Kuwait"], ["\uD83C\uDDE7\uD83C\uDDED", "Bahrain"], ["\uD83C\uDDF4\uD83C\uDDF2", "Oman"], ["\uD83C\uDDEF\uD83C\uDDF4", "Jordan"],
-  ["\uD83C\uDDF2\uD83C\uDDE6", "Morocco"], ["\uD83C\uDDE9\uD83C\uDDFF", "Algeria"], ["\uD83C\uDDF9\uD83C\uDDF3", "Tunisia"], ["\uD83C\uDDF5\uD83C\uDDF8", "Palestine"], ["\uD83C\uDDF1\uD83C\uDDE7", "Lebanon"],
-  ["\uD83C\uDDEE\uD83C\uDDF7", "Iran"], ["\uD83C\uDDEE\uD83C\uDDF6", "Iraq"], ["\uD83C\uDDF8\uD83C\uDDFE", "Syria"], ["\uD83C\uDDFE\uD83C\uDDEA", "Yemen"], ["\uD83C\uDDE6\uD83C\uDDEB", "Afghanistan"],
-  ["\uD83C\uDDF1\uD83C\uDDF0", "Sri Lanka"], ["\uD83C\uDDF3\uD83C\uDDF5", "Nepal"], ["\uD83C\uDDF2\uD83C\uDDFB", "Maldives"], ["\uD83C\uDDF8\uD83C\uDDEC", "Singapore"], ["\uD83C\uDDE7\uD83C\uDDF3", "Brunei"],
-  ["\uD83C\uDDF0\uD83C\uDDFF", "Kazakhstan"], ["\uD83C\uDDFA\uD83C\uDDFF", "Uzbekistan"], ["\uD83C\uDDF8\uD83C\uDDF4", "Somalia"], ["\uD83C\uDDF8\uD83C\uDDE9", "Sudan"], ["\uD83C\uDDF0\uD83C\uDDEA", "Kenya"],
-  ["\uD83C\uDDF9\uD83C\uDDFF", "Tanzania"], ["\uD83C\uDDEC\uD83C\uDDED", "Ghana"], ["\uD83C\uDDF8\uD83C\uDDF3", "Senegal"], ["\uD83C\uDDE7\uD83C\uDDE6", "Bosnia & Herzegovina"], ["\uD83C\uDDE6\uD83C\uDDF1", "Albania"],
-  ["\uD83C\uDDFD\uD83C\uDDF0", "Kosovo"], ["\uD83C\uDDEB\uD83C\uDDF7", "France"], ["\uD83C\uDDE9\uD83C\uDDEA", "Germany"], ["\uD83C\uDDF3\uD83C\uDDF1", "Netherlands"], ["\uD83C\uDDEE\uD83C\uDDF9", "Italy"],
-  ["\uD83C\uDDEA\uD83C\uDDF8", "Spain"], ["\uD83C\uDDF8\uD83C\uDDEA", "Sweden"], ["\uD83C\uDDF3\uD83C\uDDF4", "Norway"], ["\uD83C\uDDF7\uD83C\uDDFA", "Russia"], ["\uD83C\uDDE8\uD83C\uDDF3", "China"],
-  ["\uD83C\uDDEF\uD83C\uDDF5", "Japan"], ["\uD83C\uDDF0\uD83C\uDDF7", "South Korea"], ["\uD83C\uDDE7\uD83C\uDDF7", "Brazil"], ["\uD83C\uDDF2\uD83C\uDDFD", "Mexico"], ["\uD83C\uDF0D", "Other"],
+  ["🇮🇳", "India"], ["🇵🇰", "Pakistan"], ["🇧🇩", "Bangladesh"], ["🇸🇦", "Saudi Arabia"], ["🇦🇪", "UAE"],
+  ["🇮🇩", "Indonesia"], ["🇲🇾", "Malaysia"], ["🇹🇷", "Türkiye"], ["🇪🇬", "Egypt"], ["🇳🇬", "Nigeria"],
+  ["🇺🇸", "USA"], ["🇬🇧", "UK"], ["🇨🇦", "Canada"], ["🇦🇺", "Australia"], ["🇿🇦", "South Africa"],
+  ["🇶🇦", "Qatar"], ["🇰🇼", "Kuwait"], ["🇧🇭", "Bahrain"], ["🇴🇲", "Oman"], ["🇯🇴", "Jordan"],
+  ["🇲🇦", "Morocco"], ["🇩🇿", "Algeria"], ["🇹🇳", "Tunisia"], ["🇵🇸", "Palestine"], ["🇱🇧", "Lebanon"],
+  ["🇮🇷", "Iran"], ["🇮🇶", "Iraq"], ["🇸🇾", "Syria"], ["🇾🇪", "Yemen"], ["🇦🇫", "Afghanistan"],
+  ["🇱🇰", "Sri Lanka"], ["🇳🇵", "Nepal"], ["🇲🇻", "Maldives"], ["🇸🇬", "Singapore"], ["🇧🇳", "Brunei"],
+  ["🇰🇿", "Kazakhstan"], ["🇺🇿", "Uzbekistan"], ["🇸🇴", "Somalia"], ["🇸🇩", "Sudan"], ["🇰🇪", "Kenya"],
+  ["🇹🇿", "Tanzania"], ["🇬🇭", "Ghana"], ["🇸🇳", "Senegal"], ["🇧🇦", "Bosnia & Herzegovina"], ["🇦🇱", "Albania"],
+  ["🇽🇰", "Kosovo"], ["🇫🇷", "France"], ["🇩🇪", "Germany"], ["🇳🇱", "Netherlands"], ["🇮🇹", "Italy"],
+  ["🇪🇸", "Spain"], ["🇸🇪", "Sweden"], ["🇳🇴", "Norway"], ["🇷🇺", "Russia"], ["🇨🇳", "China"],
+  ["🇯🇵", "Japan"], ["🇰🇷", "South Korea"], ["🇧🇷", "Brazil"], ["🇲🇽", "Mexico"], ["🌍", "Other"],
 ];
 
 /* ------------------------------------------------------------------ */
@@ -153,16 +153,16 @@ const bandFor = (streak) => {
 };
 
 const LEVELS = [
-  { id: 1, name: "Qatrah", en: "A Drop", days: 0, ar: "\u0642\u064e\u0637\u0652\u0631\u064e\u0629", ring: "#7FB3D5",
+  { id: 1, name: "Qatrah", en: "A Drop", days: 0, ar: "قَطْرَة", ring: "#7FB3D5",
     note: "Every rain begins with one drop. You have begun." },
-  { id: 2, name: "Baarish", en: "Rain", days: 180, ar: "\u0645\u064e\u0637\u064e\u0631", ring: "#5FA8C9",
-    note: "\u201cHe will send rain to you in abundance.\u201d \u2014 Surah Nuh 71:11" },
-  { id: 3, name: "Nahr", en: "Stream", days: 540, ar: "\u0646\u064e\u0647\u0652\u0631", ring: "#3FAE7C",
+  { id: 2, name: "Baarish", en: "Rain", days: 180, ar: "مَطَر", ring: "#5FA8C9",
+    note: "“He will send rain to you in abundance.” — Surah Nuh 71:11" },
+  { id: 3, name: "Nahr", en: "Stream", days: 540, ar: "نَهْر", ring: "#3FAE7C",
     note: "What fell as drops now runs as a stream." },
-  { id: 4, name: "Hadiqa", en: "Garden", days: 1080, ar: "\u062d\u064e\u062f\u064a\u0642\u064e\u0629", ring: "#C9A24B",
-    note: "\u201cAnd He will make for you gardens.\u201d \u2014 Surah Nuh 71:12" },
-  { id: 5, name: "Anhar", en: "Rivers", days: 1800, ar: "\u0623\u064e\u0646\u0652\u0647\u064e\u0627\u0631", ring: "#E8CD86",
-    note: "\u201cAnd He will make for you rivers.\u201d \u2014 the last of the promises." },
+  { id: 4, name: "Hadiqa", en: "Garden", days: 1080, ar: "حَديقَة", ring: "#C9A24B",
+    note: "“And He will make for you gardens.” — Surah Nuh 71:12" },
+  { id: 5, name: "Anhar", en: "Rivers", days: 1800, ar: "أَنْهَار", ring: "#E8CD86",
+    note: "“And He will make for you rivers.” — the last of the promises." },
 ];
 const levelFor = (completedDays) => {
   let cur = LEVELS[0];
@@ -173,7 +173,7 @@ const levelFor = (completedDays) => {
 
 const MILESTONES = [
   { days: 7, label: "One week" },
-  { days: 40, label: "Chilla \u2014 forty days" },
+  { days: 40, label: "Chilla — forty days" },
   { days: 100, label: "One hundred days" },
   { days: 180, label: "The six-month journey" },
   { days: 365, label: "One full year" },
@@ -186,27 +186,27 @@ const INTRO = [
   {
     k: "Why a thousand?",
     h: "Let's be honest first",
-    body: "No hadith fixes the number at a thousand. The Prophet \uFDFA, who carried no sin, sought forgiveness seventy to a hundred times a day.\n\nA thousand is not a ruling handed down to you. It is a commitment you choose \u2014 and that is exactly why it works.",
+    body: "No hadith fixes the number at a thousand. The Prophet ﷺ, who carried no sin, sought forgiveness seventy to a hundred times a day.\n\nA thousand is not a ruling handed down to you. It is a commitment you choose — and that is exactly why it works.",
     ar: null,
   },
   {
     k: "One honest thing",
     h: "This is only a tracker",
-    body: "Counting on your fingers is the Sunnah \u2014 the Prophet \uFDFA counted dhikr on his right hand, and taught that the fingers will be asked, and will speak, on the Day of Judgement.\n\nYour fingers, a tasbeeh, or a simple counter are all better than a screen. This app only keeps the tally for you when it helps you stay constant. Never let the phone come between you and the dhikr.",
+    body: "Counting on your fingers is the Sunnah — the Prophet ﷺ counted dhikr on his right hand, and taught that the fingers will be asked, and will speak, on the Day of Judgement.\n\nYour fingers, a tasbeeh, or a simple counter are all better than a screen. This app only keeps the tally for you when it helps you stay constant. Never let the phone come between you and the dhikr.",
     src: "Abu Dawud, Tirmidhi",
     ar: null,
   },
   {
     k: "The promise",
     h: "It was never about the count",
-    body: "\u201cWhoever keeps constant in seeking forgiveness, Allah will make for him a way out of every distress, relief from every anxiety, and provide for him from where he never imagined.\u201d\n\nRead it again: whoever keeps constant. The promise is tied to constancy \u2014 not to a quantity.",
+    body: "“Whoever keeps constant in seeking forgiveness, Allah will make for him a way out of every distress, relief from every anxiety, and provide for him from where he never imagined.”\n\nRead it again: whoever keeps constant. The promise is tied to constancy — not to a quantity.",
     src: "Abu Dawud",
     ar: null,
   },
   {
     k: "So why a thousand?",
     h: "Because it cannot be done carelessly",
-    body: "A hundred can be finished in one distracted minute and forgotten by noon.\n\nA thousand cannot. It has to be broken across the whole day \u2014 while waiting, walking, travelling, between tasks. It quietly forces istighfar into the corners of your life until the tongue keeps moving on its own.\n\nThat is the point. Not the number \u2014 what the number does to your day.",
+    body: "A hundred can be finished in one distracted minute and forgotten by noon.\n\nA thousand cannot. It has to be broken across the whole day — while waiting, walking, travelling, between tasks. It quietly forces istighfar into the corners of your life until the tongue keeps moving on its own.\n\nThat is the point. Not the number — what the number does to your day.",
     ar: null,
   },
   {
@@ -218,8 +218,8 @@ const INTRO = [
   {
     k: "What is promised",
     h: "Rain, wealth, children, gardens, rivers",
-    body: "These are not our claims. They are what Allah Himself attached to istighfar in Surah Nuh \u2014 and many people describe real change in their lives after months of holding to it.\n\nWe cannot measure that, and we won't pretend to. What we can say is this: the promises are His, and the constancy is yours.",
-    ar: "\u0641\u064e\u0642\u064f\u0644\u0652\u062a\u064f \u0627\u0633\u0652\u062a\u064e\u063a\u0652\u0641\u0650\u0631\u064f\u0648\u0627 \u0631\u064e\u0628\u064e\u0651\u0643\u064f\u0645\u0652 \u0625\u0650\u0646\u064e\u0651\u0647\u064f \u0643\u064e\u0627\u0646\u064e \u063a\u064e\u0641\u064e\u0651\u0627\u0631\u064b\u0627",
+    body: "These are not our claims. They are what Allah Himself attached to istighfar in Surah Nuh — and many people describe real change in their lives after months of holding to it.\n\nWe cannot measure that, and we won't pretend to. What we can say is this: the promises are His, and the constancy is yours.",
+    ar: "فَقُلْتُ اسْتَغْفِرُوا رَبَّكُمْ إِنَّهُ كَانَ غَفَّارًا",
     src: "Surah Nuh 71:10",
   },
 ];
@@ -283,7 +283,7 @@ export default function Mustaghfirin() {
   const [emailSent, setEmailSent] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [obName, setObName] = useState("");
-  const [obFlag, setObFlag] = useState("\uD83C\uDDEE\uD83C\uDDF3");
+  const [obFlag, setObFlag] = useState("🇮🇳");
   const [obVis, setObVis] = useState("anon");
   const [ummahTotal, setUmmahTotal] = useState(null);
   const [ummahActive, setUmmahActive] = useState(null);
@@ -379,7 +379,7 @@ export default function Mustaghfirin() {
     const q = readQueue();
     const entries = Object.entries(q).filter(([, d]) => d !== 0);
     if (entries.length === 0) { setPending(0); return; }
-    setSavingNote(t("saving") === "saving" ? "Saving\u2026" : t("saving"));
+    setSavingNote(t("saving") === "saving" ? "Saving…" : t("saving"));
     for (const [day, delta] of entries) {
       try {
         const { error } = await supabase.rpc("add_istighfar", { p_day: day, p_delta: delta });
@@ -605,7 +605,7 @@ export default function Mustaghfirin() {
     const vapid = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     if (!vapid) { alert("Reminders aren't configured yet."); return; }
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      alert("Reminders need the app to be installed on your home screen. Open the browser menu and choose \u201cAdd to Home screen\u201d, then try again.");
+      alert("Reminders need the app to be installed on your home screen. Open the browser menu and choose “Add to Home screen”, then try again.");
       return;
     }
     setPushBusy(true);
@@ -613,7 +613,7 @@ export default function Mustaghfirin() {
       const perm = await Notification.requestPermission();
       if (perm !== "granted") {
         setPushBusy(false);
-        alert("No problem \u2014 you can turn reminders on any time from Settings.");
+        alert("No problem — you can turn reminders on any time from Settings.");
         return;
       }
       const reg = await navigator.serviceWorker.ready;
@@ -702,7 +702,7 @@ export default function Mustaghfirin() {
             )}
             <div style={{ fontSize: 15.5, color: C.muted, lineHeight: 1.75, whiteSpace: "pre-line" }}>{s.body}</div>
             {s.src && (
-              <div style={{ fontSize: 12, color: C.faint, marginTop: 14, fontStyle: "italic" }}>\u2014 {s.src}</div>
+              <div style={{ fontSize: 12, color: C.faint, marginTop: 14, fontStyle: "italic" }}>— {s.src}</div>
             )}
           </div>
 
@@ -737,7 +737,7 @@ export default function Mustaghfirin() {
       <Shell dir={dir}>
         <div style={{ maxWidth: 420, margin: "0 auto", padding: "60px 22px", position: "relative" }} className="fadeUp">
           <div style={{ textAlign: "center", marginBottom: 36 }}>
-            <div className="amiri" style={{ fontSize: 40, color: C.goldBright, lineHeight: 1.6 }}>\u0623\u064e\u0633\u0652\u062a\u064e\u063a\u0652\u0641\u0650\u0631\u064f \u0627\u0644\u0644\u0647</div>
+            <div className="amiri" style={{ fontSize: 40, color: C.goldBright, lineHeight: 1.6 }}>أَسْتَغْفِرُ الله</div>
             <div className="display" style={{ fontSize: 34, fontWeight: 600, marginTop: 8 }}>{APP_NAME}</div>
             <div style={{ fontSize: 12, color: C.faint, letterSpacing: 3, textTransform: "uppercase", marginTop: 4 }}>{t("tagline")}</div>
             <div style={{ fontSize: 14, color: C.muted, marginTop: 18, lineHeight: 1.6 }}>
@@ -767,7 +767,7 @@ export default function Mustaghfirin() {
             </>
           ) : (
             <div style={{ background: C.surface2, border: `1px solid ${C.gold}44`, borderRadius: 14, padding: 18, textAlign: "center", fontSize: 14, lineHeight: 1.6 }}>
-              \u2709\uFE0F {t("email_sent")} <b>{email}</b>. {t("open_this_device")}
+              ✉️ {t("email_sent")} <b>{email}</b>. {t("open_this_device")}
             </div>
           )}
 
@@ -811,7 +811,7 @@ export default function Mustaghfirin() {
               return (
                 <button key={v.id} onClick={() => setObVis(v.id)}
                   style={{ textAlign: dir === "rtl" ? "right" : "left", background: active ? C.surface2 : C.surface, border: `1px solid ${active ? C.gold : C.line}`, borderRadius: 12, padding: "12px 14px", cursor: "pointer", color: C.ivory }}>
-                  <div style={{ fontSize: 14.5, fontWeight: 600, color: active ? C.goldBright : C.ivory }}>{active ? "\u25cf " : "\u25cb "}{v.title}</div>
+                  <div style={{ fontSize: 14.5, fontWeight: 600, color: active ? C.goldBright : C.ivory }}>{active ? "● " : "○ "}{v.title}</div>
                   <div style={{ fontSize: 12, color: C.muted, marginTop: 3, lineHeight: 1.45 }}>{v.desc}</div>
                 </button>
               );
@@ -932,7 +932,7 @@ export default function Mustaghfirin() {
                     style={{ transition: "stroke-dashoffset .35s ease" }} />
                 </svg>
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2 }}>
-                  <div className="amiri" style={{ fontSize: 30, color: C.goldBright, lineHeight: 1.4 }}>\u0623\u064e\u0633\u0652\u062a\u064e\u063a\u0652\u0641\u0650\u0631\u064f \u0627\u0644\u0644\u0647</div>
+                  <div className="amiri" style={{ fontSize: 30, color: C.goldBright, lineHeight: 1.4 }}>أَسْتَغْفِرُ الله</div>
                   <div style={{ fontSize: 54, fontWeight: 700, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{todayCount}</div>
                   <div style={{ fontSize: 12, color: C.muted, letterSpacing: 1.5 }}>{t("of_today", { goal: DAILY_GOAL })}</div>
                   {pct >= 1 && <div style={{ fontSize: 12, color: C.goldBright, marginTop: 4 }}>{t("goal_complete")}</div>}
@@ -964,7 +964,7 @@ export default function Mustaghfirin() {
             </div>
 
             <div style={{ marginTop: 22, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: 18 }}>
-              <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: "uppercase", color: CAT_COLOR[daily.c], marginBottom: 6 }}>{t("todays_reminder")} \u00b7 {daily.c}</div>
+              <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: "uppercase", color: CAT_COLOR[daily.c], marginBottom: 6 }}>{t("todays_reminder")} · {daily.c}</div>
               <div className="display" style={{ fontSize: 19, fontWeight: 600, marginBottom: 6 }}>{daily.t}</div>
               <div style={{ fontSize: 14, color: C.muted, lineHeight: 1.55 }}>{daily.b}</div>
               <div style={{ fontSize: 11.5, color: C.faint, marginTop: 8, fontStyle: "italic" }}>{daily.s}</div>
@@ -995,7 +995,7 @@ export default function Mustaghfirin() {
         {tab === "benefits" && (
           <div className="fadeUp">
             <div style={{ background: C.surface2, border: `1px solid ${C.gold}44`, borderRadius: 18, padding: 22, marginBottom: 16, textAlign: "center" }}>
-              <div style={{ fontSize: 10, letterSpacing: 3, textTransform: "uppercase", color: CAT_COLOR[benefit.c], marginBottom: 8 }}>{t("benefit_of", { i: browseIdx + 1, total: BENEFITS.length })} \u00b7 {benefit.c}</div>
+              <div style={{ fontSize: 10, letterSpacing: 3, textTransform: "uppercase", color: CAT_COLOR[benefit.c], marginBottom: 8 }}>{t("benefit_of", { i: browseIdx + 1, total: BENEFITS.length })} · {benefit.c}</div>
               <div className="display" style={{ fontSize: 24, fontWeight: 600, marginBottom: 10 }}>{benefit.t}</div>
               <div style={{ fontSize: 15, lineHeight: 1.65, opacity: 0.9 }}>{benefit.b}</div>
               <div style={{ fontSize: 12, color: C.faint, marginTop: 12, fontStyle: "italic" }}>{benefit.s}</div>
@@ -1055,7 +1055,7 @@ export default function Mustaghfirin() {
                   background: isMe ? C.surface2 : C.surface, borderRadius: 14,
                   border: `1px solid ${isMe ? C.gold + "66" : C.line}`,
                 }}>
-                  <div style={{ fontSize: 20 }}>{p.country_flag || "\uD83C\uDF0D"}</div>
+                  <div style={{ fontSize: 20 }}>{p.country_flag || "🌍"}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {p.name}{isMe && <span style={{ color: C.gold, fontSize: 11, marginLeft: 6 }}>{t("you").toLowerCase()}</span>}
@@ -1086,7 +1086,7 @@ export default function Mustaghfirin() {
               <div className="amiri" style={{ fontSize: 26, color: level.ring, lineHeight: 1.6 }}>{level.ar}</div>
               <div className="display" style={{ fontSize: 26, fontWeight: 600, marginTop: 2 }}>{level.name}</div>
               <div style={{ fontSize: 11, letterSpacing: 2.5, textTransform: "uppercase", color: C.faint, marginTop: 2 }}>
-                {t("level_word")} {level.id} \u00b7 {level.en}
+                {t("level_word")} {level.id} · {level.en}
               </div>
               <div style={{ fontSize: 12.5, color: C.muted, marginTop: 10, lineHeight: 1.55, fontStyle: "italic" }}>{level.note}</div>
 
@@ -1132,7 +1132,7 @@ export default function Mustaghfirin() {
                 const done = completedDays >= m.days;
                 return (
                   <div key={m.days} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
-                    <span style={{ fontSize: 14, color: done ? C.goldBright : C.faint, width: 18 }}>{done ? "\u2726" : "\u25cb"}</span>
+                    <span style={{ fontSize: 14, color: done ? C.goldBright : C.faint, width: 18 }}>{done ? "✦" : "○"}</span>
                     <span style={{ fontSize: 13.5, color: done ? C.ivory : C.faint, flex: 1 }}>{m.label}</span>
                     <span style={{ fontSize: 11.5, color: C.faint }}>{m.days}d</span>
                   </div>
@@ -1156,10 +1156,10 @@ export default function Mustaghfirin() {
 
             <div style={{ marginTop: 16, background: C.surface2, borderRadius: 16, padding: 18, border: `1px solid ${C.line}` }}>
               <div className="amiri" style={{ fontSize: 21, color: C.goldBright, textAlign: "center", lineHeight: 2 }}>
-                \u0641\u064e\u0642\u064f\u0644\u0652\u062a\u064f \u0627\u0633\u0652\u062a\u064e\u063a\u0652\u0641\u0650\u0631\u064f\u0648\u0627 \u0631\u064e\u0628\u064e\u0651\u0643\u064f\u0645\u0652 \u0625\u0650\u0646\u064e\u0651\u0647\u064f \u0643\u064e\u0627\u0646\u064e \u063a\u064e\u0641\u064e\u0651\u0627\u0631\u064b\u0627
+                فَقُلْتُ اسْتَغْفِرُوا رَبَّكُمْ إِنَّهُ كَانَ غَفَّارًا
               </div>
               <div style={{ fontSize: 12.5, color: C.muted, textAlign: "center", marginTop: 6, fontStyle: "italic" }}>
-                "Ask forgiveness of your Lord \u2014 indeed, He is ever a Perpetual Forgiver." \u2014 Surah Nuh 71:10
+                "Ask forgiveness of your Lord — indeed, He is ever a Perpetual Forgiver." — Surah Nuh 71:10
               </div>
             </div>
 
@@ -1232,7 +1232,7 @@ export default function Mustaghfirin() {
                 return (
                   <button key={v.id} onClick={() => updateVisibility(v.id)}
                     style={{ display: "block", width: "100%", textAlign: dir === "rtl" ? "right" : "left", background: active ? C.surface2 : "transparent", border: `1px solid ${active ? C.gold : C.line}`, borderRadius: 10, padding: "10px 12px", marginBottom: 6, color: active ? C.goldBright : C.ivory, fontSize: 13.5, cursor: "pointer" }}>
-                    {active ? "\u25cf " : "\u25cb "}{v.label}
+                    {active ? "● " : "○ "}{v.label}
                   </button>
                 );
               })}
@@ -1273,7 +1273,7 @@ export default function Mustaghfirin() {
 
             {/* PRIVACY */}
             <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
-              <a href="/privacy" style={{ fontSize: 13.5, color: C.gold }}>{t("privacy_policy")} \u2192</a>
+              <a href="/privacy" style={{ fontSize: 13.5, color: C.gold }}>{t("privacy_policy")} →</a>
             </div>
 
             {/* DANGER */}
