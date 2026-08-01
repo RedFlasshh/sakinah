@@ -20,6 +20,7 @@ const JOURNEY_DAYS = 180;
 const QUEUE_KEY = "sakinah-queue"; // offline pending deltas
 const CACHE_KEY = "sakinah-cache"; // last known counts, for offline display
 const LANG_KEY = "app-lang";
+const CONTACT_EMAIL = "ygm786@gmail.com"; // corrections & privacy contact — keep in sync with privacy page
 
 /* ------------------------------------------------------------------ */
 /* 60 benefits                                                         */
@@ -1014,6 +1015,14 @@ export default function Mustaghfirin() {
             </div>
             <div style={{ fontSize: 11.5, color: C.faint, lineHeight: 1.6, padding: "0 6px" }}>
               {t("benefits_note")}
+            </div>
+            <div style={{ textAlign: "center", marginTop: 16 }}>
+              <a
+                href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("Correction — Mustaghfirin benefit #" + (browseIdx + 1))}&body=${encodeURIComponent('Benefit #' + (browseIdx + 1) + ': "' + benefit.t + '"\nSource shown: ' + benefit.s + '\n\nWhat needs correcting:\n')}`}
+                style={{ fontSize: 12.5, color: C.gold, textDecoration: "none" }}
+              >
+                {t("report_correction")}
+              </a>
             </div>
           </div>
         )}
