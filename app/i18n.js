@@ -85,6 +85,7 @@ const T = {
     en: "Quran & Hadith entries are direct textual promises with references. Scholars & Reflection entries are scholarly wisdom and spiritual insight — presented as such, never as scripture.",
     ur: "قرآن و حدیث کے اندراجات حوالہ جات کے ساتھ براہِ راست وعدے ہیں۔ علماء و غور و فکر کے اندراجات علمی حکمت اور روحانی بصیرت ہیں — انہیں اسی طور پر پیش کیا گیا ہے، کبھی نص کے طور پر نہیں۔",
   },
+  report_correction: { en: "See something that needs correcting? Let us know →", ur: "کوئی چیز جسے درست کرنے کی ضرورت ہے؟ ہمیں بتائیں →" },
 
   /* ummah */
   ummah_title: { en: "The Ummah, Right Now", ur: "امت، اسی وقت" },
