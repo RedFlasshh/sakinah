@@ -1359,31 +1359,31 @@ export default function Mustaghfirin() {
                 </div>
               )}
 
-              {/* YEAR — 12 month bars: days the goal was reached that month */}
+              {/* YEAR — Jan→Dec of the current year: days the goal was reached each month */}
               {chartRange === "year" && (() => {
+                const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                 const now = new Date();
-                const months = [];
-                for (let m = 11; m >= 0; m--) {
-                  const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
-                  const y = d.getFullYear(), mo = d.getMonth();
-                  const daysInMonth = new Date(y, mo + 1, 0).getDate();
+                const year = now.getFullYear();
+                const curMonth = now.getMonth();
+                const months = MONTHS.map((label, mo) => {
+                  const daysInMonth = new Date(year, mo + 1, 0).getDate();
                   let done = 0;
                   for (let day = 1; day <= daysInMonth; day++) {
-                    const key = `${y}-${String(mo + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                    const key = `${year}-${String(mo + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
                     if ((days[key] || 0) >= DAILY_GOAL) done++;
                   }
-                  months.push({ label: d.toLocaleDateString(lang === "ur" ? "ur" : "en", { month: "narrow" }), done, total: daysInMonth, isNow: m === 0 });
-                }
+                  return { label, done, isNow: mo === curMonth };
+                });
                 const peak = Math.max(...months.map((x) => x.done), 1);
                 return (
-                  <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 4, height: 110 }}>
+                  <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 3, height: 118 }}>
                     {months.map((mn, i) => {
-                      const h = mn.done > 0 ? Math.max((mn.done / peak) * 82, 4) : 2;
+                      const h = mn.done > 0 ? Math.max((mn.done / peak) * 80, 4) : 2;
                       return (
                         <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", gap: 4, height: "100%" }}>
-                          <span style={{ fontSize: 9, color: mn.done > 0 ? C.goldBright : "transparent" }}>{mn.done}</span>
-                          <div style={{ width: "100%", maxWidth: 22, height: h, borderRadius: 5, background: mn.done > 0 ? `linear-gradient(180deg, ${C.goldBright}, ${C.gold})` : C.ringTrack }} />
-                          <span style={{ fontSize: 9, color: mn.isNow ? C.goldBright : C.faint }}>{mn.label}</span>
+                          <span style={{ fontSize: 8.5, color: mn.done > 0 ? C.goldBright : "transparent" }}>{mn.done}</span>
+                          <div style={{ width: "100%", maxWidth: 18, height: h, borderRadius: 4, background: mn.done > 0 ? `linear-gradient(180deg, ${C.goldBright}, ${C.gold})` : C.ringTrack, border: mn.isNow ? `1px solid ${C.goldBright}` : "none" }} />
+                          <span style={{ fontSize: 7.5, color: mn.isNow ? C.goldBright : C.faint, whiteSpace: "nowrap" }}>{mn.label}</span>
                         </div>
                       );
                     })}
