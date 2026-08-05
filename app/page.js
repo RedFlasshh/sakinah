@@ -1257,24 +1257,42 @@ export default function Mustaghfirin() {
 
             {/* LAST 7 DAYS CHART */}
             <div style={{ marginTop: 12, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: 18 }}>
-              <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint, marginBottom: 14 }}>{t("last_7_days")}</div>
-              <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 6, height: 90 }}>
-                {Array.from({ length: 7 }).map((_, idx) => {
-                  const offset = idx - 6; // -6..0 (oldest to today)
-                  const key = shiftDayKey(tz, offset);
-                  const val = days[key] || 0;
-                  const h = Math.max(Math.min(val / DAILY_GOAL, 1) * 76, 3);
-                  const done = val >= DAILY_GOAL;
-                  const label = new Date(key).toLocaleDateString(lang === "ur" ? "ur" : "en", { weekday: "narrow" });
-                  return (
-                    <div key={key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                      <div style={{ width: "100%", maxWidth: 30, height: h, borderRadius: 6, background: done ? `linear-gradient(180deg, ${C.goldBright}, ${C.gold})` : C.ringTrack, transition: "height .4s ease" }} />
-                      <span style={{ fontSize: 10, color: offset === 0 ? C.goldBright : C.faint }}>{label}</span>
+              <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint, marginBottom: 18 }}>{t("last_7_days")}</div>
+              {(() => {
+                const vals = Array.from({ length: 7 }).map((_, idx) => days[shiftDayKey(tz, idx - 6)] || 0);
+                const peak = Math.max(DAILY_GOAL, ...vals); // scale by real max, but never below the goal
+                const goalY = (DAILY_GOAL / peak) * 92; // where the 1,000 line sits
+                return (
+                  <div style={{ position: "relative", height: 118 }}>
+                    {/* goal reference line at 1,000 */}
+                    {peak > DAILY_GOAL && (
+                      <div style={{ position: "absolute", left: 0, right: 0, bottom: 22 + goalY, height: 1, background: `${C.gold}55`, zIndex: 1 }}>
+                        <span style={{ position: "absolute", right: 0, top: -14, fontSize: 9, color: C.gold }}>1,000</span>
+                      </div>
+                    )}
+                    <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 6, height: "100%" }}>
+                      {Array.from({ length: 7 }).map((_, idx) => {
+                        const offset = idx - 6;
+                        const key = shiftDayKey(tz, offset);
+                        const val = days[key] || 0;
+                        const h = val > 0 ? Math.max((val / peak) * 92, 4) : 2;
+                        const done = val >= DAILY_GOAL;
+                        const label = new Date(key).toLocaleDateString(lang === "ur" ? "ur" : "en", { weekday: "narrow" });
+                        return (
+                          <div key={key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", gap: 4, height: "100%" }}>
+                            <span style={{ fontSize: 9.5, color: val > 0 ? (done ? C.goldBright : C.muted) : "transparent", fontVariantNumeric: "tabular-nums" }}>
+                              {val > 0 ? val.toLocaleString() : "0"}
+                            </span>
+                            <div style={{ width: "100%", maxWidth: 30, height: h, borderRadius: 6, background: done ? `linear-gradient(180deg, ${C.goldBright}, ${C.gold})` : (val > 0 ? C.faint : C.ringTrack), transition: "height .4s ease" }} />
+                            <span style={{ fontSize: 10, color: offset === 0 ? C.goldBright : C.faint }}>{label}</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
-              <div style={{ fontSize: 11, color: C.faint, textAlign: "center", marginTop: 10 }}>{t("chart_note")}</div>
+                  </div>
+                );
+              })()}
+              <div style={{ fontSize: 11, color: C.faint, textAlign: "center", marginTop: 12 }}>{t("chart_note")}</div>
             </div>
 
             {/* SAYYIDUL ISTIGHFAR */}
