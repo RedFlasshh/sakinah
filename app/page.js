@@ -296,6 +296,16 @@ const pickEncouragement = (days, tz, todayCount, streak) => {
   return null; // low handled separately (organic, on the count screen)
 };
 
+/* Heatmap cell colour — intensity by fraction of the daily goal reached */
+const heatColor = (val) => {
+  if (val <= 0) return "#16302A";                 // empty
+  const f = Math.min(val / DAILY_GOAL, 1);
+  if (val >= DAILY_GOAL) return "#E8CD86";         // goal reached — brightest gold
+  if (f >= 0.66) return "#C9A24B";
+  if (f >= 0.33) return "#8A7636";
+  return "#4A4327";                                // a little
+};
+
 const inputStyle = { width: "100%", background: C.bg, border: `1px solid ${C.line}`, borderRadius: 10, padding: "12px 14px", color: C.ivory, fontSize: 15 };
 const goldBtn = { background: C.gold, color: "#1B1508", fontWeight: 700, border: "none", borderRadius: 10, padding: "12px 18px", fontSize: 15, cursor: "pointer", width: "100%" };
 
@@ -345,6 +355,7 @@ export default function Mustaghfirin() {
   const [introStep, setIntroStep] = useState(null);
   const [lang, setLang] = useState("en");
   const [encourage, setEncourage] = useState(null); // {key, text} popup on open
+  const [chartRange, setChartRange] = useState("week"); // week | month | quarter | year
 
   const flushTimer = useRef(null);
   const audioRef = useRef(null);
@@ -1255,16 +1266,33 @@ export default function Mustaghfirin() {
               </div>
             </div>
 
-            {/* LAST 7 DAYS CHART */}
+            {/* PROGRESS CHART with range toggle */}
             <div style={{ marginTop: 12, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: 18 }}>
-              <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint, marginBottom: 18 }}>{t("last_7_days")}</div>
-              {(() => {
+              {/* toggle row */}
+              <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
+                {[
+                  { id: "week", label: t("range_week") },
+                  { id: "month", label: t("range_month") },
+                  { id: "quarter", label: t("range_quarter") },
+                  { id: "year", label: t("range_year") },
+                ].map((r) => {
+                  const active = chartRange === r.id;
+                  return (
+                    <button key={r.id} onClick={() => setChartRange(r.id)}
+                      style={{ flex: 1, background: active ? C.surface2 : "transparent", border: `1px solid ${active ? C.gold : C.line}`, color: active ? C.goldBright : C.muted, borderRadius: 9, padding: "7px 4px", fontSize: 11.5, fontWeight: active ? 700 : 400, cursor: "pointer" }}>
+                      {r.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* WEEK — bar chart with real numbers */}
+              {chartRange === "week" && (() => {
                 const vals = Array.from({ length: 7 }).map((_, idx) => days[shiftDayKey(tz, idx - 6)] || 0);
-                const peak = Math.max(DAILY_GOAL, ...vals); // scale by real max, but never below the goal
-                const goalY = (DAILY_GOAL / peak) * 92; // where the 1,000 line sits
+                const peak = Math.max(DAILY_GOAL, ...vals);
+                const goalY = (DAILY_GOAL / peak) * 92;
                 return (
                   <div style={{ position: "relative", height: 118 }}>
-                    {/* goal reference line at 1,000 */}
                     {peak > DAILY_GOAL && (
                       <div style={{ position: "absolute", left: 0, right: 0, bottom: 22 + goalY, height: 1, background: `${C.gold}55`, zIndex: 1 }}>
                         <span style={{ position: "absolute", right: 0, top: -14, fontSize: 9, color: C.gold }}>1,000</span>
@@ -1292,7 +1320,82 @@ export default function Mustaghfirin() {
                   </div>
                 );
               })()}
-              <div style={{ fontSize: 11, color: C.faint, textAlign: "center", marginTop: 12 }}>{t("chart_note")}</div>
+
+              {/* MONTH — 30-day heatmap */}
+              {chartRange === "month" && (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(10, 1fr)", gap: 5 }}>
+                  {Array.from({ length: 30 }).map((_, idx) => {
+                    const offset = idx - 29;
+                    const key = shiftDayKey(tz, offset);
+                    const val = days[key] || 0;
+                    const dayNum = new Date(key).getDate();
+                    return (
+                      <div key={key} title={`${key}: ${val}`}
+                        style={{ aspectRatio: "1", borderRadius: 5, background: heatColor(val), border: offset === 0 ? `1px solid ${C.goldBright}` : "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8.5, color: val >= DAILY_GOAL ? "#1B1508" : C.faint }}>
+                        {dayNum}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* QUARTER — ~13 week columns, each a stack of 7 day cells */}
+              {chartRange === "quarter" && (
+                <div style={{ display: "flex", gap: 4, justifyContent: "space-between" }}>
+                  {Array.from({ length: 13 }).map((_, w) => {
+                    const weekStart = -(12 - w) * 7;
+                    return (
+                      <div key={w} style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1 }}>
+                        {Array.from({ length: 7 }).map((__, d) => {
+                          const offset = weekStart + d;
+                          if (offset > 0) return <div key={d} style={{ aspectRatio: "1" }} />;
+                          const key = shiftDayKey(tz, offset);
+                          const val = days[key] || 0;
+                          return <div key={d} title={`${key}: ${val}`} style={{ aspectRatio: "1", borderRadius: 3, background: heatColor(val) }} />;
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* YEAR — 12 month bars: days the goal was reached that month */}
+              {chartRange === "year" && (() => {
+                const now = new Date();
+                const months = [];
+                for (let m = 11; m >= 0; m--) {
+                  const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
+                  const y = d.getFullYear(), mo = d.getMonth();
+                  const daysInMonth = new Date(y, mo + 1, 0).getDate();
+                  let done = 0;
+                  for (let day = 1; day <= daysInMonth; day++) {
+                    const key = `${y}-${String(mo + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                    if ((days[key] || 0) >= DAILY_GOAL) done++;
+                  }
+                  months.push({ label: d.toLocaleDateString(lang === "ur" ? "ur" : "en", { month: "narrow" }), done, total: daysInMonth, isNow: m === 0 });
+                }
+                const peak = Math.max(...months.map((x) => x.done), 1);
+                return (
+                  <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 4, height: 110 }}>
+                    {months.map((mn, i) => {
+                      const h = mn.done > 0 ? Math.max((mn.done / peak) * 82, 4) : 2;
+                      return (
+                        <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", gap: 4, height: "100%" }}>
+                          <span style={{ fontSize: 9, color: mn.done > 0 ? C.goldBright : "transparent" }}>{mn.done}</span>
+                          <div style={{ width: "100%", maxWidth: 22, height: h, borderRadius: 5, background: mn.done > 0 ? `linear-gradient(180deg, ${C.goldBright}, ${C.gold})` : C.ringTrack }} />
+                          <span style={{ fontSize: 9, color: mn.isNow ? C.goldBright : C.faint }}>{mn.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              <div style={{ fontSize: 11, color: C.faint, textAlign: "center", marginTop: 14 }}>
+                {chartRange === "week" ? t("chart_note")
+                  : chartRange === "year" ? t("chart_note_year")
+                  : t("chart_note_heat")}
+              </div>
             </div>
 
             {/* SAYYIDUL ISTIGHFAR */}
