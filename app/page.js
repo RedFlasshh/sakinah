@@ -14,7 +14,7 @@ const C = {
   muted: "#8BA79A", faint: "#5C776C", ringTrack: "#1E3A33", warn: "#D98F4E",
 };
 
-const APP_NAME = "Mustaghfirin";   // "…and those who seek forgiveness before dawn." — Quran 3:17
+const APP_NAME = "Al-Mustaghfirin";   // "…and those who seek forgiveness before dawn." — Quran 3:17
 const DAILY_GOAL = 1000;
 const JOURNEY_DAYS = 180;
 const QUEUE_KEY = "sakinah-queue"; // offline pending deltas
@@ -185,6 +185,12 @@ const MILESTONES = [
 
 const INTRO = [
   {
+    k: "Welcome",
+    h: "Whoever you are, you are welcome here",
+    body: "This is a quiet place to seek forgiveness from Allah — the practice Muslims call istighfar.\n\nYou do not need to be anything in particular to open this door. If you wish to turn to your Lord and ask His forgiveness, you belong here. Its mercy is offered to anyone who seeks it.",
+    ar: null,
+  },
+  {
     k: "Why a thousand?",
     h: "Let's be honest first",
     body: "No hadith fixes the number at a thousand. The Prophet ﷺ, who carried no sin, sought forgiveness seventy to a hundred times a day.\n\nA thousand is not a ruling handed down to you. It is a commitment you choose — and that is exactly why it works.",
@@ -246,6 +252,50 @@ const queueDelta = (day, delta) => {
   writeQueue(q);
 };
 
+/* ------------------------------------------------------------------ */
+/* Encouragement messages — pre-written and safe. No fabricated hadith. */
+/* Warmth and motivation only; any Quran/hadith here is verbatim and    */
+/* attributed. Shown as a gentle card, one at a time.                   */
+/* ------------------------------------------------------------------ */
+const ENCOURAGE = {
+  overachiever: [
+    "Far beyond the day's goal, MashaAllah. May every word be written for you.",
+    "You didn't stop at enough. That is a heart that has found something.",
+    "The tongue that stays moist with dhikr — you are living it today.",
+  ],
+  streak: [
+    "Days in a row now, quietly kept. Constancy is the whole secret.",
+    "Little by little, without breaking. This is how hearts change.",
+    "The promise was tied to those who keep constant — and you are keeping constant.",
+  ],
+  low: [
+    "Even a little today is not nothing. Begin again, gently.",
+    "No need to catch up all at once. One Astaghfirullah, then another.",
+    "The door does not close because the day was small. Return to it.",
+  ],
+  returned: [
+    "Welcome back. No guilt here — only that you came back, which is everything.",
+    "Allah is more pleased with a servant's return than you can imagine. You returned.",
+    "However long it's been, the door was never shut. Begin again today.",
+  ],
+};
+
+/* Decide if a message is warranted, and which one. Returns {key, text} or null. */
+const pickEncouragement = (days, tz, todayCount, streak) => {
+  const pool = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  // returned after a gap: 3+ days since any activity before today
+  const activeDays = Object.keys(days).filter((d) => (days[d] || 0) > 0).sort();
+  if (activeDays.length >= 2) {
+    const prev = activeDays[activeDays.length - 2];
+    const gapMs = new Date(dayKeyInTz(tz)) - new Date(prev);
+    const gapDays = Math.round(gapMs / 86400000);
+    if (todayCount > 0 && gapDays >= 3) return { key: "returned", text: pool(ENCOURAGE.returned) };
+  }
+  if (todayCount >= 2000) return { key: "overachiever", text: pool(ENCOURAGE.overachiever) };
+  if (streak >= 7) return { key: "streak", text: pool(ENCOURAGE.streak) };
+  return null; // low handled separately (organic, on the count screen)
+};
+
 const inputStyle = { width: "100%", background: C.bg, border: `1px solid ${C.line}`, borderRadius: 10, padding: "12px 14px", color: C.ivory, fontSize: 15 };
 const goldBtn = { background: C.gold, color: "#1B1508", fontWeight: 700, border: "none", borderRadius: 10, padding: "12px 18px", fontSize: 15, cursor: "pointer", width: "100%" };
 
@@ -294,6 +344,7 @@ export default function Mustaghfirin() {
   const [remindDismissed, setRemindDismissed] = useState(false);
   const [introStep, setIntroStep] = useState(null);
   const [lang, setLang] = useState("en");
+  const [encourage, setEncourage] = useState(null); // {key, text} popup on open
 
   const flushTimer = useRef(null);
   const audioRef = useRef(null);
@@ -358,6 +409,17 @@ export default function Mustaghfirin() {
       setDays(map);
       try { localStorage.setItem(CACHE_KEY, JSON.stringify(map)); } catch {}
       setDataReady(true);
+      // gentle encouragement popup — once per app open, only if warranted
+      try {
+        const shownToday = sessionStorage.getItem("enc-shown");
+        if (!shownToday) {
+          const tzNow = prof.timezone || deviceTz();
+          const tc = map[dayKeyInTz(tzNow)] || 0;
+          const st = computeStreak(map, tzNow);
+          const msg = pickEncouragement(map, tzNow, tc, st);
+          if (msg) { setEncourage(msg); sessionStorage.setItem("enc-shown", "1"); }
+        }
+      } catch (e) {}
     } catch (e) {
       console.error("load failed", e);
       try {
@@ -862,6 +924,20 @@ export default function Mustaghfirin() {
 
   return (
     <Shell dir={dir}>
+      {encourage && (
+        <div onClick={() => setEncourage(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(6,14,12,0.72)", backdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 26 }}>
+          <div onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 380, width: "100%", background: C.surface2, border: `1px solid ${C.gold}55`, borderRadius: 20, padding: 26, textAlign: "center" }} className="fadeUp">
+            <div className="amiri" style={{ fontSize: 30, color: C.goldBright, lineHeight: 1.5, marginBottom: 14 }}>أَسْتَغْفِرُ الله</div>
+            <div style={{ fontSize: 16, color: C.ivory, lineHeight: 1.7 }}>{encourage.text}</div>
+            <button onClick={() => setEncourage(null)}
+              style={{ ...goldBtn, marginTop: 22, width: "auto", padding: "10px 28px" }}>
+              {t("ameen")}
+            </button>
+          </div>
+        </div>
+      )}
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "20px 18px 96px", position: "relative" }}>
         {/* Header */}
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
@@ -963,6 +1039,13 @@ export default function Mustaghfirin() {
             <div style={{ marginTop: 22, textAlign: "center", fontSize: 12.5, color: C.faint, fontStyle: "italic", lineHeight: 1.5, padding: "0 10px" }}>
               {NIYAT[niyatIdx]}
             </div>
+
+            {/* organic encouragement: afternoon onward, day still barely begun */}
+            {dataReady && todayCount > 0 && todayCount < 200 && new Date().getHours() >= 15 && (
+              <div style={{ marginTop: 12, textAlign: "center", fontSize: 12.5, color: C.gold, lineHeight: 1.5, padding: "0 16px" }}>
+                {ENCOURAGE.low[completedDays % ENCOURAGE.low.length]}
+              </div>
+            )}
 
             <div style={{ marginTop: 22, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: 18 }}>
               <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: "uppercase", color: CAT_COLOR[daily.c], marginBottom: 6 }}>{t("todays_reminder")} · {daily.c}</div>
@@ -1169,6 +1252,43 @@ export default function Mustaghfirin() {
               </div>
               <div style={{ fontSize: 12.5, color: C.muted, textAlign: "center", marginTop: 6, fontStyle: "italic" }}>
                 "Ask forgiveness of your Lord — indeed, He is ever a Perpetual Forgiver." — Surah Nuh 71:10
+              </div>
+            </div>
+
+            {/* LAST 7 DAYS CHART */}
+            <div style={{ marginTop: 12, background: C.surface, border: `1px solid ${C.line}`, borderRadius: 16, padding: 18 }}>
+              <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint, marginBottom: 14 }}>{t("last_7_days")}</div>
+              <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 6, height: 90 }}>
+                {Array.from({ length: 7 }).map((_, idx) => {
+                  const offset = idx - 6; // -6..0 (oldest to today)
+                  const key = shiftDayKey(tz, offset);
+                  const val = days[key] || 0;
+                  const h = Math.max(Math.min(val / DAILY_GOAL, 1) * 76, 3);
+                  const done = val >= DAILY_GOAL;
+                  const label = new Date(key).toLocaleDateString(lang === "ur" ? "ur" : "en", { weekday: "narrow" });
+                  return (
+                    <div key={key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                      <div style={{ width: "100%", maxWidth: 30, height: h, borderRadius: 6, background: done ? `linear-gradient(180deg, ${C.goldBright}, ${C.gold})` : C.ringTrack, transition: "height .4s ease" }} />
+                      <span style={{ fontSize: 10, color: offset === 0 ? C.goldBright : C.faint }}>{label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: 11, color: C.faint, textAlign: "center", marginTop: 10 }}>{t("chart_note")}</div>
+            </div>
+
+            {/* SAYYIDUL ISTIGHFAR */}
+            <div style={{ marginTop: 12, background: C.surface2, border: `1px solid ${C.gold}44`, borderRadius: 16, padding: 20 }}>
+              <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.gold, marginBottom: 4, textAlign: "center" }}>{t("sayyid_title")}</div>
+              <div style={{ fontSize: 11.5, color: C.faint, textAlign: "center", marginBottom: 14 }}>{t("sayyid_sub")}</div>
+              <div className="amiri" style={{ fontSize: 20, color: C.goldBright, textAlign: "center", lineHeight: 2.4, direction: "rtl" }}>
+                اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَٰهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَىٰ عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ
+              </div>
+              <div style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.6, marginTop: 14, fontStyle: "italic" }}>
+                "O Allah, You are my Lord, there is none worthy of worship but You. You created me and I am Your servant. I abide by Your covenant and promise as best I can. I seek refuge in You from the evil I have done. I acknowledge Your favour upon me, and I acknowledge my sin. So forgive me, for none forgives sins but You."
+              </div>
+              <div style={{ fontSize: 11.5, color: C.faint, marginTop: 10 }}>
+                {t("sayyid_source")}
               </div>
             </div>
 
