@@ -162,7 +162,7 @@ const T = {
   skip: { en: "Skip", ur: "چھوڑیں" },
   ameen: { en: "Ameen", ur: "آمین" },
   last_7_days: { en: "Last 7 days", ur: "پچھلے 7 دن" },
-  chart_note: { en: "Gold bars are days you reached 1,000.", ur: "سنہری ستون وہ دن ہیں جب آپ نے 1,000 مکمل کیے۔" },
+  chart_note: { en: "Gold bars are days you reached 1,000 or more.", ur: "سنہری ستون وہ دن ہیں جب آپ نے 1,000 یا زیادہ مکمل کیے۔" },
   sayyid_title: { en: "Sayyid al-Istighfar", ur: "سیّد الاستغفار" },
   sayyid_sub: { en: "The Master of Seeking Forgiveness — morning and evening", ur: "استغفار کا سردار — صبح و شام" },
   sayyid_source: { en: "Whoever says it with conviction and dies that day enters Paradise. — Bukhari", ur: "جو اسے یقین کے ساتھ پڑھے اور اسی دن انتقال کر جائے، جنت میں داخل ہوگا۔ — بخاری" },
