@@ -344,6 +344,7 @@ export default function Mustaghfirin() {
   const [emailSent, setEmailSent] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [obName, setObName] = useState("");
+  const [editName, setEditName] = useState(""); // settings: type a display name
   const [obFlag, setObFlag] = useState("🇮🇳");
   const [obVis, setObVis] = useState("anon");
   const [ummahTotal, setUmmahTotal] = useState(null);
@@ -664,6 +665,16 @@ export default function Mustaghfirin() {
     const { data, error } = await supabase.from("profiles").update(patch).eq("id", session.user.id).select().single();
     if (!error) setProfile(data);
     else alert("Could not update: " + error.message);
+  };
+
+  // Save a real display name (from Settings) and switch to name-visible mode
+  const saveName = async () => {
+    if (!session?.user || !editName.trim()) return;
+    const { data, error } = await supabase.from("profiles")
+      .update({ name: editName.trim().slice(0, 24), visibility: "name" })
+      .eq("id", session.user.id).select().single();
+    if (!error) { setProfile(data); setEditName(""); }
+    else alert("Could not save the name: " + error.message);
   };
 
   const resetTimezone = async () => {
@@ -1489,6 +1500,31 @@ export default function Mustaghfirin() {
               <div style={{ fontSize: 11.5, color: C.faint, marginTop: 6, lineHeight: 1.5 }}>
                 {t("shown_as")} {profile.country_flag} {profile.visibility === "private" ? t("hidden_from_all") : profile.name}
               </div>
+
+              {/* name input — appears when "Show my name" is chosen */}
+              {profile.visibility === "name" && (
+                <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.line}` }}>
+                  <label style={{ fontSize: 11.5, color: C.faint }}>{t("your_name")}</label>
+                  <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                    <input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder={String(profile.name).startsWith("Servant #") ? "e.g. Yusuf" : profile.name}
+                      maxLength={24}
+                      style={{ ...inputStyle, flex: 1 }}
+                    />
+                    <button onClick={saveName} disabled={!editName.trim()}
+                      style={{ background: C.gold, color: "#1B1508", fontWeight: 700, border: "none", borderRadius: 10, padding: "0 18px", fontSize: 13.5, cursor: editName.trim() ? "pointer" : "not-allowed", opacity: editName.trim() ? 1 : 0.5, whiteSpace: "nowrap" }}>
+                      {lang === "ur" ? "محفوظ کریں" : "Save"}
+                    </button>
+                  </div>
+                  {String(profile.name).startsWith("Servant #") && (
+                    <div style={{ fontSize: 11, color: C.warn, marginTop: 6, lineHeight: 1.4 }}>
+                      {lang === "ur" ? "آپ نے ابھی تک اپنا نام نہیں لکھا — یہاں لکھیں تاکہ آپ کا نام نظر آئے۔" : "You haven't entered a name yet — type one here so your name shows instead of an alias."}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* TIMEZONE */}
