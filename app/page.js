@@ -408,6 +408,7 @@ export default function Mustaghfirin() {
       if (pErr) throw pErr;
       setProfile(prof ?? null);
       if (!prof) { setDataReady(false); return; }
+      try { localStorage.setItem("sakinah-profile", JSON.stringify(prof)); } catch {}
 
       const { data: rows, error: rErr } = await supabase
         .from("daily_counts").select("day,count").eq("user_id", session.user.id);
@@ -434,12 +435,32 @@ export default function Mustaghfirin() {
       } catch (e) {}
     } catch (e) {
       console.error("load failed", e);
+      // Offline / unreachable: fall back to cached profile + counts so the app
+      // stays usable. Only lock counting if we truly have nothing cached.
+      let cachedProfile = null;
+      let cachedCounts = {};
+      try { cachedProfile = JSON.parse(localStorage.getItem("sakinah-profile") || "null"); } catch {}
+      try { cachedCounts = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}"); } catch {}
+
+      // apply any queued offline taps on top of the cached counts
       try {
-        const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
-        setDays(cached);
+        const q = readQueue();
+        Object.entries(q).forEach(([d, delta]) => { cachedCounts[d] = Math.max((cachedCounts[d] || 0) + delta, 0); });
+        setPending(Object.values(q).reduce((a, b) => a + Math.abs(b), 0));
       } catch {}
-      setDataReady(false);
-      setLoadFailed(true);
+
+      setDays(cachedCounts);
+
+      if (cachedProfile) {
+        // We know who the user is and have their data — let them keep counting offline.
+        setProfile((prev) => prev ?? cachedProfile);
+        setDataReady(true);
+        setLoadFailed(false);
+      } else {
+        // Nothing cached (brand-new user with no connection) — keep it locked.
+        setDataReady(false);
+        setLoadFailed(true);
+      }
     }
   }, [session]);
 
@@ -750,7 +771,7 @@ export default function Mustaghfirin() {
     try {
       const { error } = await supabase.rpc("delete_my_account");
       if (error) throw error;
-      try { localStorage.removeItem(QUEUE_KEY); localStorage.removeItem(CACHE_KEY); } catch {}
+      try { localStorage.removeItem(QUEUE_KEY); localStorage.removeItem(CACHE_KEY); localStorage.removeItem("sakinah-profile"); } catch {}
       await supabase.auth.signOut();
       setProfile(undefined); setDays({}); setSession(null);
     } catch (e) {
