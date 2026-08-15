@@ -1,9 +1,14 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "app.vercel.sakinah_rho.twa",
-        "sha256_cert_fingerprints": ["D3:79:0F:BC:95:2E:B2:BF:A0:DB:10:2D:73:E6:09:2E:BC:E8:C3:33:80:60:38:58:62:BB:33:A5:BC:7C:7F:5D",
-        "EE:8C:F6:97:38:5E:3E:EB:DB:8C:FD:B4:FE:12:63:BF:D8:E6:E3:9F:D8:13:F7:C8:FB:72:E1:19:FE:45:2F:7F"]
-      }
-    }]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.sakinah_rho.twa",
+      "sha256_cert_fingerprints": [
+        "70:29:06:D6:C7:45:AE:6E:D7:3A:CB:A4:65:32:B0:0F:11:87:4B:07:8B:7E:36:D8:19:DC:0A:42:D0:02:5F:59",
+        "D3:79:0F:BC:95:2E:B2:BF:A0:DB:10:2D:73:E6:09:2E:BC:E8:C3:33:80:60:38:58:62:BB:33:A5:BC:7C:7F:5D",
+        "EE:8C:F6:97:38:5E:3E:EB:DB:8C:FD:B4:FE:12:63:BF:D8:E6:E3:9F:D8:13:F7:C8:FB:72:E1:19:FE:45:2F:7F"
+      ]
+    }
+  }
+]
