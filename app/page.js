@@ -1256,11 +1256,12 @@ export default function Mustaghfirin() {
                 </button>
               </div>
             ) : (<>
+              {ummahActive !== null && (
               <div style={{ background: C.surface2, border: `1px solid ${C.gold}44`, borderRadius: 16, padding: 20, marginBottom: 12, textAlign: "center" }}>
                 <div className="display" style={{ fontSize: 34, fontWeight: 600, color: C.goldBright }}>{ummahActive.toLocaleString()}</div>
                 <div style={{ fontSize: 13, color: C.muted, marginTop: 2 }}>{t("ummah_with_you")}</div>
               </div>
-            )}
+              )}
             {ummahTotal !== null && (
               <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 14, marginBottom: 16, textAlign: "center" }}>
                 <div style={{ fontSize: 10, letterSpacing: 2.5, textTransform: "uppercase", color: C.gold, marginBottom: 4 }}>{t("ummah_together")}</div>
