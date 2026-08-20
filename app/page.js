@@ -20,6 +20,8 @@ const JOURNEY_DAYS = 180;
 const QUEUE_KEY = "sakinah-queue"; // offline pending deltas
 const CACHE_KEY = "sakinah-cache"; // last known counts, for offline display
 const LANG_KEY = "app-lang";
+const GUEST_KEY = "guest-mode";      // "1" when using the app without an account
+const GUEST_DAYS = "guest-days";     // guest counts live here (device-only)
 const CONTACT_EMAIL = "ygm786@gmail.com"; // corrections & privacy contact — keep in sync with privacy page
 
 /* ------------------------------------------------------------------ */
@@ -336,6 +338,7 @@ export default function Mustaghfirin() {
   const [board, setBoard] = useState(null);
   const [boardLoading, setBoardLoading] = useState(false);
   const [ripples, setRipples] = useState([]);
+  const moveStack = useRef({}); // { [dayKey]: [amounts...] } — for undoing whole moves
   const [dailyIdx, setDailyIdx] = useState(0);
   const [browseIdx, setBrowseIdx] = useState(0);
   const [niyatIdx, setNiyatIdx] = useState(0);
@@ -355,6 +358,7 @@ export default function Mustaghfirin() {
   const [remindDismissed, setRemindDismissed] = useState(false);
   const [introStep, setIntroStep] = useState(null);
   const [lang, setLang] = useState("en");
+  const [guest, setGuest] = useState(false); // using app without an account
   const [encourage, setEncourage] = useState(null); // {key, text} popup on open
   const [chartRange, setChartRange] = useState("week"); // week | month | quarter | year
 
@@ -363,7 +367,19 @@ export default function Mustaghfirin() {
   const soundOnRef = useRef(true);
   soundOnRef.current = soundOn;
 
-  const t = makeT(lang);
+  const tBase = makeT(lang);
+  // Guest-mode strings kept inline (so i18n.js needn't change this round).
+  const GUEST_T = {
+    guest: { en: "Guest", ur: "مہمان" },
+    continue_guest: { en: "Continue as guest", ur: "بطور مہمان جاری رکھیں" },
+    continue_guest_sub: { en: "Start counting now — no account needed. You can sign in later to save.", ur: "ابھی شروع کریں — کسی اکاؤنٹ کی ضرورت نہیں۔ بعد میں محفوظ کرنے کے لیے سائن اِن کر سکتے ہیں۔" },
+    guest_save_title: { en: "Save your progress", ur: "اپنی پیش رفت محفوظ کریں" },
+    guest_save_desc: { en: "You're counting as a guest — your progress is saved on this device only. Sign in to back it up and reach it from any device. Your current count will carry over.", ur: "آپ بطور مہمان شمار کر رہے ہیں — آپ کی پیش رفت صرف اسی ڈیوائس پر محفوظ ہے۔ بیک اپ اور کسی بھی ڈیوائس سے رسائی کے لیے سائن اِن کریں۔ آپ کا موجودہ شمار منتقل ہو جائے گا۔" },
+    guest_save_btn: { en: "Sign in to save", ur: "محفوظ کرنے کے لیے سائن اِن کریں" },
+    guest_ummah_title: { en: "Join the ummah", ur: "امت میں شامل ہوں" },
+    guest_ummah_desc: { en: "The ummah presence is for signed-in believers. Sign in to be counted among those making istighfar right now.", ur: "امت کی موجودگی سائن اِن شدہ مومنین کے لیے ہے۔ ابھی استغفار کرنے والوں میں شمار ہونے کے لیے سائن اِن کریں۔" },
+  };
+  const t = (key) => (GUEST_T[key] ? (GUEST_T[key][lang] || GUEST_T[key].en) : tBase(key));
   const dir = LANGS[lang]?.dir || "ltr";
 
   const tz = profile?.timezone || deviceTz();
@@ -383,8 +399,26 @@ export default function Mustaghfirin() {
       if (!localStorage.getItem("intro-seen")) setIntroStep(0);
       const savedLang = localStorage.getItem(LANG_KEY);
       if (savedLang && LANGS[savedLang]) setLang(savedLang);
+      if (localStorage.getItem(GUEST_KEY) === "1") setGuest(true);
     } catch (e) {}
   }, []);
+
+  // Guest counting helpers — everything stays on the device
+  const readGuestDays = () => {
+    try { return JSON.parse(localStorage.getItem(GUEST_DAYS) || "{}"); } catch { return {}; }
+  };
+  const enterGuest = () => {
+    try { localStorage.setItem(GUEST_KEY, "1"); } catch {}
+    setGuest(true);
+    setDays(readGuestDays());
+    setDataReady(true);
+    setLoadFailed(false);
+  };
+  const leaveGuestToLogin = () => {
+    // keep guest data in place; it will migrate after a successful login
+    try { localStorage.removeItem(GUEST_KEY); } catch {}
+    setGuest(false);
+  };
 
   const changeLang = (l) => {
     setLang(l);
@@ -590,14 +624,26 @@ export default function Mustaghfirin() {
     else if (Math.floor(nextC / 100) > Math.floor(prevC / 100)) playMilestone();
     else playDrop();
 
+    // remember positive moves so Undo can reverse the whole move (+1, +33, +100…)
+    if (n > 0) {
+      const stack = moveStack.current[today] || [];
+      stack.push(n);
+      moveStack.current[today] = stack;
+    }
+
     setDays((prev) => {
       const updated = { ...prev, [today]: Math.max((prev[today] || 0) + n, 0) };
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify(updated)); } catch {}
+      try {
+        if (guest) localStorage.setItem(GUEST_DAYS, JSON.stringify(updated));
+        else localStorage.setItem(CACHE_KEY, JSON.stringify(updated));
+      } catch {}
       return updated;
     });
-    queueDelta(today, n);
-    setPending((p) => p + Math.abs(n));
-    scheduleFlush();
+    if (!guest) {
+      queueDelta(today, n);
+      setPending((p) => p + Math.abs(n));
+      scheduleFlush();
+    }
 
     if (e && n === 1) {
       const id = Date.now() + Math.random();
@@ -605,7 +651,17 @@ export default function Mustaghfirin() {
       setTimeout(() => setRipples((r) => r.filter((x) => x.id !== id)), 900);
     }
   };
-  const undoOne = () => { if (todayCount > 0) addCount(-1); };
+
+  // Undo the whole last move (e.g. a +100 tap removes 100). Falls back to -1
+  // if we have no recorded move (e.g. after a reload) but there's still a count.
+  const undoOne = () => {
+    if (todayCount <= 0) return;
+    const stack = moveStack.current[today] || [];
+    const lastMove = stack.length ? stack.pop() : 1;
+    moveStack.current[today] = stack;
+    const amount = Math.min(lastMove, todayCount); // never go below zero
+    addCount(-amount);
+  };
 
   /* ------- presence board ------- */
   const loadBoard = useCallback(async () => {
@@ -670,7 +726,22 @@ export default function Mustaghfirin() {
     };
     const { data, error } = await supabase.from("profiles").upsert(row).select().single();
     setAuthBusy(false);
-    if (!error) { setProfile(data); setDataReady(true); }
+    if (!error) {
+      setProfile(data);
+      // Migrate any guest counting into this new account, then clear guest storage.
+      try {
+        const g = JSON.parse(localStorage.getItem(GUEST_DAYS) || "{}");
+        const entries = Object.entries(g).filter(([, v]) => v > 0);
+        if (entries.length) {
+          for (const [day, count] of entries) {
+            await supabase.rpc("add_istighfar", { p_day: day, p_delta: count });
+          }
+          localStorage.removeItem(GUEST_DAYS);
+        }
+      } catch (e) { console.error("guest migration failed", e); }
+      setDataReady(true);
+      loadAll(); // reload so migrated counts show immediately
+    }
     else {
       console.error("profile save error:", error);
       alert("Could not save your profile: " + (error.message || JSON.stringify(error)));
@@ -833,12 +904,12 @@ export default function Mustaghfirin() {
     );
   }
 
-  if (session === undefined) {
+  if (session === undefined && !guest) {
     return <Shell dir={dir}><div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>{t("opening")}</div></Shell>;
   }
 
   /* ------- login ------- */
-  if (!session) {
+  if (!session && !guest) {
     return (
       <Shell dir={dir}>
         <div style={{ maxWidth: 420, margin: "0 auto", padding: "60px 22px", position: "relative" }} className="fadeUp">
@@ -877,7 +948,15 @@ export default function Mustaghfirin() {
             </div>
           )}
 
-          <div style={{ textAlign: "center", marginTop: 26 }}>
+          <div style={{ textAlign: "center", marginTop: 22 }}>
+            <button onClick={enterGuest}
+              style={{ background: "transparent", border: "none", color: C.gold, fontSize: 13.5, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+              {t("continue_guest")}
+            </button>
+            <div style={{ fontSize: 11, color: C.faint, marginTop: 5, lineHeight: 1.5 }}>{t("continue_guest_sub")}</div>
+          </div>
+
+          <div style={{ textAlign: "center", marginTop: 20 }}>
             <a href="/privacy" style={{ fontSize: 12, color: C.faint }}>{t("privacy_policy")}</a>
           </div>
 
@@ -896,7 +975,7 @@ export default function Mustaghfirin() {
   }
 
   /* ------- onboarding ------- */
-  if (profile === null) {
+  if (profile === null && !guest) {
     const visOptions = [
       { id: "anon", title: t("vis_anon_title"), desc: t("vis_anon_desc") },
       { id: "private", title: t("vis_hidden_title"), desc: t("vis_hidden_desc") },
@@ -953,9 +1032,14 @@ export default function Mustaghfirin() {
     );
   }
 
-  if (profile === undefined) {
+  if (profile === undefined && !guest) {
     return <Shell dir={dir}><div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>{t("loading_journey")}</div></Shell>;
   }
+
+  // Guests use a lightweight local profile (never written to the server).
+  const effectiveProfile = guest
+    ? { name: t("guest"), country_flag: "🌙", visibility: "private", timezone: deviceTz(), reminder_enabled: false }
+    : profile;
 
   const daily = BENEFITS[dailyIdx];
   const benefit = BENEFITS[browseIdx];
@@ -963,7 +1047,7 @@ export default function Mustaghfirin() {
   const { cur: level, next: nextLevel } = levelFor(completedDays);
   const nextMilestone = MILESTONES.find((m) => m.days > completedDays) || null;
   const showRemindPrompt =
-    !profile.reminder_enabled && !remindDismissed && completedDays >= 3;
+    !effectiveProfile.reminder_enabled && !remindDismissed && completedDays >= 3 && !guest;
 
   return (
     <Shell dir={dir}>
@@ -987,7 +1071,7 @@ export default function Mustaghfirin() {
           <div>
             <div className="display" style={{ fontSize: 26, fontWeight: 600, letterSpacing: 0.5 }}>{APP_NAME}</div>
             <div style={{ fontSize: 11, color: C.faint, letterSpacing: 2.5, textTransform: "uppercase" }}>
-              {profile.country_flag} {profile.visibility === "name" ? profile.name : t("you")}
+              {effectiveProfile.country_flag} {effectiveProfile.visibility === "name" ? effectiveProfile.name : t("you")}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -999,7 +1083,7 @@ export default function Mustaghfirin() {
               <Flame size={15} color={streak > 0 ? C.gold : C.faint} fill={streak > 0 ? C.gold : "none"} />
               <span style={{ fontSize: 14, fontWeight: 600, color: streak > 0 ? C.goldBright : C.muted }}>{streak}</span>
             </div>
-            <button onClick={signOut} aria-label="Sign out"
+            <button onClick={guest ? leaveGuestToLogin : signOut} aria-label="Sign out"
               style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999, padding: 8, cursor: "pointer", display: "flex", color: C.faint }}>
               <LogOut size={15} />
             </button>
@@ -1161,7 +1245,17 @@ export default function Mustaghfirin() {
               {t("ummah_sub")}
             </div>
 
-            {ummahActive !== null && (
+            {guest ? (
+              <div style={{ background: C.surface2, border: `1px solid ${C.gold}44`, borderRadius: 16, padding: 22, textAlign: "center" }}>
+                <div style={{ fontSize: 30, marginBottom: 8 }}>🤲</div>
+                <div style={{ fontSize: 14.5, fontWeight: 600, color: C.goldBright, marginBottom: 6 }}>{t("guest_ummah_title")}</div>
+                <div style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.55, marginBottom: 14 }}>{t("guest_ummah_desc")}</div>
+                <button onClick={leaveGuestToLogin}
+                  style={{ background: C.gold, color: "#1B1508", fontWeight: 700, border: "none", borderRadius: 10, padding: "10px 20px", fontSize: 13.5, cursor: "pointer" }}>
+                  {t("guest_save_btn")}
+                </button>
+              </div>
+            ) : (<>
               <div style={{ background: C.surface2, border: `1px solid ${C.gold}44`, borderRadius: 16, padding: 20, marginBottom: 12, textAlign: "center" }}>
                 <div className="display" style={{ fontSize: 34, fontWeight: 600, color: C.goldBright }}>{ummahActive.toLocaleString()}</div>
                 <div style={{ fontSize: 13, color: C.muted, marginTop: 2 }}>{t("ummah_with_you")}</div>
@@ -1206,6 +1300,7 @@ export default function Mustaghfirin() {
                 {t("refresh")}
               </button>
             )}
+            </>)}
           </div>
         )}
 
@@ -1448,6 +1543,18 @@ export default function Mustaghfirin() {
             {/* ---------- SETTINGS ---------- */}
             <div className="display" style={{ fontSize: 19, fontWeight: 600, margin: "30px 0 10px" }}>{t("settings")}</div>
 
+            {/* GUEST: invite to save progress */}
+            {guest && (
+              <div style={{ background: C.surface2, border: `1px solid ${C.gold}55`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: C.goldBright, marginBottom: 4 }}>{t("guest_save_title")}</div>
+                <div style={{ fontSize: 12.5, color: C.muted, lineHeight: 1.55, marginBottom: 12 }}>{t("guest_save_desc")}</div>
+                <button onClick={leaveGuestToLogin}
+                  style={{ background: C.gold, color: "#1B1508", fontWeight: 700, border: "none", borderRadius: 10, padding: "10px 18px", fontSize: 13.5, cursor: "pointer" }}>
+                  {t("guest_save_btn")}
+                </button>
+              </div>
+            )}
+
             {/* LANGUAGE */}
             <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
               <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint, marginBottom: 10 }}>{t("language")}</div>
@@ -1464,6 +1571,8 @@ export default function Mustaghfirin() {
               </div>
             </div>
 
+            {/* login-only settings (reminder, privacy visibility, timezone, delete) */}
+            {!guest && <>
             {/* DAILY REMINDER */}
             <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
               <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint, marginBottom: 8 }}>{t("daily_reminder")}</div>
@@ -1560,6 +1669,7 @@ export default function Mustaghfirin() {
                 {t("set_to_device")} ({deviceTz()})
               </button>
             </div>
+            </>}
 
             {/* WHY A THOUSAND */}
             <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
@@ -1584,6 +1694,7 @@ export default function Mustaghfirin() {
             </div>
 
             {/* DANGER */}
+            {!guest && (
             <div style={{ background: C.surface, border: "1px solid #4A2020", borderRadius: 14, padding: 16, marginBottom: 30 }}>
               <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: "#C87070", marginBottom: 8 }}>{t("danger_zone")}</div>
               {!confirmDelete ? (
@@ -1609,6 +1720,7 @@ export default function Mustaghfirin() {
                 </>
               )}
             </div>
+            )}
           </div>
         )}
       </div>
