@@ -379,7 +379,14 @@ export default function Mustaghfirin() {
     guest_ummah_title: { en: "Join the ummah", ur: "امت میں شامل ہوں" },
     guest_ummah_desc: { en: "The ummah presence is for signed-in believers. Sign in to be counted among those making istighfar right now.", ur: "امت کی موجودگی سائن اِن شدہ مومنین کے لیے ہے۔ ابھی استغفار کرنے والوں میں شمار ہونے کے لیے سائن اِن کریں۔" },
   };
-  const t = (key) => (GUEST_T[key] ? (GUEST_T[key][lang] || GUEST_T[key].en) : tBase(key));
+  const t = (key, vars) => {
+    if (GUEST_T[key]) {
+      let str = GUEST_T[key][lang] || GUEST_T[key].en;
+      if (vars) for (const k in vars) str = str.replace(`{${k}}`, vars[k]);
+      return str;
+    }
+    return tBase(key, vars);
+  };
   const dir = LANGS[lang]?.dir || "ltr";
 
   const tz = profile?.timezone || deviceTz();
