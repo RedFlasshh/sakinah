@@ -363,6 +363,7 @@ export default function Mustaghfirin() {
   const [chartRange, setChartRange] = useState("week"); // week | month | quarter | year
 
   const flushTimer = useRef(null);
+  const isFlushing = useRef(false);
   const audioRef = useRef(null);
   const soundOnRef = useRef(true);
   soundOnRef.current = soundOn;
@@ -513,36 +514,47 @@ export default function Mustaghfirin() {
   /* ------- flush queued deltas atomically ------- */
   const flushQueue = useCallback(async () => {
     if (!session?.user) return;
-    const q = readQueue();
-    const entries = Object.entries(q).filter(([, d]) => d !== 0);
-    if (entries.length === 0) { setPending(0); return; }
-    setSavingNote(t("saving") === "saving" ? "Saving…" : t("saving"));
-    for (const [day, delta] of entries) {
-      try {
-        const { error } = await supabase.rpc("add_istighfar", { p_day: day, p_delta: delta });
-        if (error) throw error;
-        const cur = readQueue();
-        delete cur[day];
-        writeQueue(cur);
-      } catch (e) {
-        console.error("flush failed for", day, e);
-        setSavingNote("");
-        setPending(Object.values(readQueue()).reduce((a, b) => a + Math.abs(b), 0));
-        return;
-      }
-    }
-    setPending(0);
-    setSavingNote("");
+    // scheduleFlush's timer, the "online" event, and "visibilitychange" can
+    // all fire within the same tick (e.g. locking the phone right as
+    // connectivity returns) — without this guard, two overlapping calls can
+    // both read the same pending delta before either deletes it, and both
+    // submit it via add_istighfar, permanently double-counting.
+    if (isFlushing.current) return;
+    isFlushing.current = true;
     try {
-      await supabase.from("profiles").update({
-        streak: computeStreak(days, tz),
-        total_count: Object.values(days).reduce((a, b) => a + b, 0),
-        today_count: days[today] || 0,
-        today_date: today,
-        last_active: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }).eq("id", session.user.id);
-    } catch (e) { console.error("aggregate update failed", e); }
+      const q = readQueue();
+      const entries = Object.entries(q).filter(([, d]) => d !== 0);
+      if (entries.length === 0) { setPending(0); return; }
+      setSavingNote(t("saving") === "saving" ? "Saving…" : t("saving"));
+      for (const [day, delta] of entries) {
+        try {
+          const { error } = await supabase.rpc("add_istighfar", { p_day: day, p_delta: delta });
+          if (error) throw error;
+          const cur = readQueue();
+          delete cur[day];
+          writeQueue(cur);
+        } catch (e) {
+          console.error("flush failed for", day, e);
+          setSavingNote("");
+          setPending(Object.values(readQueue()).reduce((a, b) => a + Math.abs(b), 0));
+          return;
+        }
+      }
+      setPending(0);
+      setSavingNote("");
+      try {
+        await supabase.from("profiles").update({
+          streak: computeStreak(days, tz),
+          total_count: Object.values(days).reduce((a, b) => a + b, 0),
+          today_count: days[today] || 0,
+          today_date: today,
+          last_active: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }).eq("id", session.user.id);
+      } catch (e) { console.error("aggregate update failed", e); }
+    } finally {
+      isFlushing.current = false;
+    }
   }, [session, days, tz, today, t]);
 
   const scheduleFlush = useCallback(() => {
@@ -677,8 +689,9 @@ export default function Mustaghfirin() {
       const { data } = await supabase
         .from("profiles")
         .select("id,name,country_flag,streak,today_count,total_count,last_active")
-        .order("today_count", { ascending: false })
-        .order("streak", { ascending: false })
+        .neq("visibility", "private") // defense in depth — RLS already enforces this, but Settings
+        .order("today_count", { ascending: false })       // promises "hidden from all" for private, so
+        .order("streak", { ascending: false })             // don't rely solely on the policy staying correct
         .limit(50);
       const cutoff = Date.now() - 24 * 3600 * 1000;
       setBoard(
@@ -698,10 +711,18 @@ export default function Mustaghfirin() {
   /* ------- auth actions ------- */
   const signInGoogle = async () => {
     setAuthBusy(true);
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: typeof window !== "undefined" ? window.location.origin : undefined },
     });
+    // On success the page navigates away, so this line never runs. It only
+    // runs on failure (misconfigured provider, offline, blocked redirect) —
+    // without it the button stayed disabled/spinning until a manual reload.
+    if (error) {
+      console.error("Google sign-in failed:", error);
+      setAuthBusy(false);
+      alert("Could not sign in with Google. Please check your connection and try again.");
+    }
   };
   const signInEmail = async () => {
     if (!email.trim()) return;
@@ -720,7 +741,10 @@ export default function Mustaghfirin() {
     setProfile(undefined); setDays({}); setDataReady(false);
   };
 
-  const aliasFor = (uid) => "Servant #" + uid.replace(/-/g, "").slice(0, 4).toUpperCase();
+  // 8 hex chars (~4.3B possibilities) rather than 4 (~65K) — at 4, a
+  // leaderboard of a few hundred anonymous users had a real chance of two
+  // people showing the identical "Servant #XXXX" label (birthday bound).
+  const aliasFor = (uid) => "Servant #" + uid.replace(/-/g, "").slice(0, 8).toUpperCase();
 
   const createProfile = async () => {
     if (!session?.user) return;
@@ -740,15 +764,30 @@ export default function Mustaghfirin() {
     setAuthBusy(false);
     if (!error) {
       setProfile(data);
-      // Migrate any guest counting into this new account, then clear guest storage.
+      // Migrate any guest counting into this new account. If a day's RPC call
+      // fails partway through (network blip), don't just log-and-abandon it —
+      // fall it through to the same offline queue the authenticated flow
+      // already retries on reconnect, so nothing gets silently stranded.
       try {
         const g = JSON.parse(localStorage.getItem(GUEST_DAYS) || "{}");
         const entries = Object.entries(g).filter(([, v]) => v > 0);
         if (entries.length) {
+          let anyFailed = false;
           for (const [day, count] of entries) {
-            await supabase.rpc("add_istighfar", { p_day: day, p_delta: count });
+            try {
+              const { error } = await supabase.rpc("add_istighfar", { p_day: day, p_delta: count });
+              if (error) throw error;
+            } catch (e) {
+              console.error("guest migration failed for", day, e);
+              queueDelta(day, count);
+              anyFailed = true;
+            }
           }
           localStorage.removeItem(GUEST_DAYS);
+          if (anyFailed) {
+            scheduleFlush();
+            alert("Some of your earlier progress couldn't be saved right now — it's stored safely and will sync automatically once you're back online.");
+          }
         }
       } catch (e) { console.error("guest migration failed", e); }
       setDataReady(true);
@@ -786,6 +825,7 @@ export default function Mustaghfirin() {
     const { data, error } = await supabase.from("profiles")
       .update({ timezone: deviceTz() }).eq("id", session.user.id).select().single();
     if (!error) { setProfile(data); alert("Home timezone set to " + deviceTz()); }
+    else { console.error("timezone update failed:", error); alert("Could not update your timezone. Please check your connection and try again."); }
   };
 
   /* ------- soft reminders ------- */
@@ -836,18 +876,20 @@ export default function Mustaghfirin() {
       const sub = await reg.pushManager.getSubscription();
       if (sub) await sub.unsubscribe();
     } catch (e) {}
-    const { data } = await supabase.from("profiles")
+    const { data, error } = await supabase.from("profiles")
       .update({ reminder_enabled: false, push_subscription: null })
       .eq("id", session.user.id).select().single();
     if (data) setProfile(data);
+    else { console.error("disable reminders failed:", error); alert("Could not turn off reminders. Please check your connection and try again."); }
     setPushBusy(false);
   };
 
   const updateReminderTime = async (time) => {
     if (!session?.user) return;
-    const { data } = await supabase.from("profiles")
+    const { data, error } = await supabase.from("profiles")
       .update({ reminder_time: time }).eq("id", session.user.id).select().single();
     if (data) setProfile(data);
+    else console.error("reminder time update failed:", error);
   };
 
   const deleteAccount = async () => {
