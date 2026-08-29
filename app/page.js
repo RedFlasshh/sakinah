@@ -676,8 +676,9 @@ export default function Mustaghfirin() {
     try {
       const { data } = await supabase
         .from("profiles")
-        .select("id,name,country_flag,streak,last_active")
-        .order("last_active", { ascending: false, nullsFirst: false })
+        .select("id,name,country_flag,streak,total_count,last_active")
+        .order("streak", { ascending: false })
+        .order("total_count", { ascending: false })
         .limit(60);
       const cutoff = Date.now() - 24 * 3600 * 1000;
       setBoard((data || []).filter((p) => p.last_active && new Date(p.last_active).getTime() > cutoff));
