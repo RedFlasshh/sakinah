@@ -5,8 +5,19 @@
    - Navigations offline: fall back to the cached app shell.
 */
 
-const CACHE = "mustaghfirin-v2";
+const CACHE = "mustaghfirin-v3";
 const APP_SHELL = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
+const NAV_TIMEOUT_MS = 2500; // don't let a slow/flaky connection hang the launch — fall back to cache quickly
+
+function fetchWithTimeout(req, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("nav-timeout")), ms);
+    fetch(req).then(
+      (res) => { clearTimeout(timer); resolve(res); },
+      (err) => { clearTimeout(timer); reject(err); }
+    );
+  });
+}
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -48,10 +59,13 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 2) Page navigations → try network, fall back to cached shell when offline
+  // 2) Page navigations → try network (briefly), fall back to cached shell on
+  //    slow/flaky or dead connections — a bare fetch() can hang for 20-30s on
+  //    a weak signal, which shows Chrome's own offline page before our catch
+  //    ever runs, so we race it against a short timeout instead.
   if (req.mode === "navigate") {
     event.respondWith(
-      fetch(req)
+      fetchWithTimeout(req, NAV_TIMEOUT_MS)
         .then((res) => {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});

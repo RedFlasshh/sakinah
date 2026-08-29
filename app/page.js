@@ -756,7 +756,7 @@ export default function Mustaghfirin() {
     }
     else {
       console.error("profile save error:", error);
-      alert("Could not save your profile: " + (error.message || JSON.stringify(error)));
+      alert("Could not save your profile. Please check your connection and try again.");
     }
   };
 
@@ -768,7 +768,7 @@ export default function Mustaghfirin() {
     }
     const { data, error } = await supabase.from("profiles").update(patch).eq("id", session.user.id).select().single();
     if (!error) setProfile(data);
-    else alert("Could not update: " + error.message);
+    else { console.error("visibility update failed:", error); alert("Could not update. Please check your connection and try again."); }
   };
 
   // Save a real display name (from Settings) and switch to name-visible mode
@@ -778,7 +778,7 @@ export default function Mustaghfirin() {
       .update({ name: editName.trim().slice(0, 24), visibility: "name" })
       .eq("id", session.user.id).select().single();
     if (!error) { setProfile(data); setEditName(""); }
-    else alert("Could not save the name: " + error.message);
+    else { console.error("name save failed:", error); alert("Could not save the name. Please check your connection and try again."); }
   };
 
   const resetTimezone = async () => {
@@ -823,7 +823,7 @@ export default function Mustaghfirin() {
       setProfile(data);
     } catch (e) {
       console.error("reminder setup failed", e);
-      alert("Could not set the reminder: " + (e.message || e));
+      alert("Could not set the reminder. Please check your connection and try again.");
     }
     setPushBusy(false);
   };
@@ -858,7 +858,8 @@ export default function Mustaghfirin() {
       await supabase.auth.signOut();
       setProfile(undefined); setDays({}); setSession(null);
     } catch (e) {
-      alert("Could not delete the account: " + (e.message || e));
+      console.error("delete account failed:", e);
+      alert("Could not delete the account. Please check your connection and try again.");
     }
   };
 
