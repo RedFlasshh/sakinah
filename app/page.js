@@ -676,12 +676,16 @@ export default function Mustaghfirin() {
     try {
       const { data } = await supabase
         .from("profiles")
-        .select("id,name,country_flag,streak,total_count,last_active")
+        .select("id,name,country_flag,streak,today_count,total_count,last_active")
+        .order("today_count", { ascending: false })
         .order("streak", { ascending: false })
-        .order("total_count", { ascending: false })
-        .limit(60);
+        .limit(50);
       const cutoff = Date.now() - 24 * 3600 * 1000;
-      setBoard((data || []).filter((p) => p.last_active && new Date(p.last_active).getTime() > cutoff));
+      setBoard(
+        (data || []).filter(
+          (p) => p.today_count > 0 && p.last_active && new Date(p.last_active).getTime() > cutoff
+        )
+      );
       const { data: total } = await supabase.rpc("ummah_total");
       if (total !== null && total !== undefined) setUmmahTotal(Number(total));
       const { data: act } = await supabase.rpc("ummah_active_count");

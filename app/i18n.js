@@ -89,7 +89,7 @@ const T = {
 
   /* ummah */
   ummah_title: { en: "The Ummah, Right Now", ur: "امت، اسی وقت" },
-  ummah_sub: { en: "Not a ranking — just company. No positions, no totals, no comparison.", ur: "کوئی درجہ بندی نہیں — بس ساتھ۔ کوئی مقام نہیں، کوئی کل تعداد نہیں، کوئی موازنہ نہیں۔" },
+  ummah_sub: { en: "Today's top 50 — a nudge to show up, not a trophy to chase. What you hide is counted too.", ur: "آج کے سرِفہرست 50 — حاضر ہونے کی ترغیب ہے، جیتنے کی دوڑ نہیں۔ جو آپ چھپاتے ہیں وہ بھی شمار ہوتا ہے۔" },
   ummah_with_you: { en: "believers making istighfar with you today", ur: "مومنین آج آپ کے ساتھ استغفار کر رہے ہیں" },
   ummah_together: { en: "🤲 Together as one Ummah", ur: "🤲 ایک امت کے طور پر" },
   ummah_total_note: { en: "istighfar through this app — every member counted, seen and unseen", ur: "اس ایپ کے ذریعے استغفار — ہر رکن شمار میں، ظاہر اور پوشیدہ" },
