@@ -131,8 +131,21 @@ const dayKeyInTz = (tz, date = new Date()) => {
     return new Intl.DateTimeFormat("en-CA").format(date);
   }
 };
-const shiftDayKey = (tz, offsetDays) =>
-  dayKeyInTz(tz, new Date(Date.now() + offsetDays * 86400000));
+// Shifts a "YYYY-MM-DD" key by a whole number of calendar days, in UTC-
+// midnight arithmetic — deliberately NOT "add offsetDays*24h to the current
+// instant and reformat in tz". That approach breaks across DST transitions
+// (a civil day can be 23h or 25h of real elapsed time in a DST-observing
+// zone), which could skip or repeat a day in a streak walk or chart range.
+// Calendar-component arithmetic in UTC has no DST to break, by construction.
+const shiftDayKeyFrom = (dayKey, offsetDays) => {
+  const [y, m, d] = dayKey.split("-").map(Number);
+  const shifted = new Date(Date.UTC(y, m - 1, d) + offsetDays * 86400000);
+  const yyyy = shifted.getUTCFullYear();
+  const mm = String(shifted.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(shifted.getUTCDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+const shiftDayKey = (tz, offsetDays) => shiftDayKeyFrom(dayKeyInTz(tz), offsetDays);
 
 const computeStreak = (days, tz) => {
   let streak = 0;

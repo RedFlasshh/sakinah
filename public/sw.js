@@ -5,6 +5,9 @@
    - Navigations offline: fall back to the cached app shell.
 */
 
+// Every production build stamps a real Next.js build ID in here automatically
+// (see scripts/inject-sw-version.mjs, wired into `npm run build`) — this
+// literal only matters for local `next dev`, where that script never runs.
 const CACHE = "mustaghfirin-v3";
 const APP_SHELL = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 const NAV_TIMEOUT_MS = 2500; // don't let a slow/flaky connection hang the launch — fall back to cache quickly
