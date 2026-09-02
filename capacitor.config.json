@@ -1,0 +1,9 @@
+{
+  "appId": "app.vercel.sakinah_rho.twa",
+  "appName": "Al-Mustaghfirin",
+  "webDir": "public",
+  "server": {
+    "url": "https://sakinah-rho.vercel.app",
+    "androidScheme": "https"
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Al-Mustaghfirin</string>
+    <string name="title_activity_main">Al-Mustaghfirin</string>
+    <string name="package_name">app.vercel.sakinah_rho.twa</string>
+    <string name="custom_url_scheme">app.vercel.sakinah_rho.twa</string>
+</resources>
