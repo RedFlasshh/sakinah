@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { Flame, BookOpen, Globe2, Map, RotateCcw, Volume2, VolumeX, LogOut, Mail, CloudOff } from "lucide-react";
+import { Flame, BookOpen, Globe2, Map, RotateCcw, Volume2, VolumeX, LogOut, Mail, CloudOff, X } from "lucide-react";
 import { LANGS, flagToLang, makeT } from "./i18n";
 
 /* ------------------------------------------------------------------ */
@@ -1183,7 +1183,7 @@ export default function Mustaghfirin() {
           </div>
         </div>
       )}
-      <div style={{ maxWidth: 460, margin: "0 auto", padding: "20px 18px 96px", position: "relative" }}>
+      <div style={{ maxWidth: 460, margin: "0 auto", padding: "20px 18px calc(96px + env(safe-area-inset-bottom))", position: "relative" }}>
         {/* Header */}
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <div>
@@ -1205,6 +1205,12 @@ export default function Mustaghfirin() {
               style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999, padding: 8, cursor: "pointer", display: "flex", color: C.faint }}>
               <LogOut size={15} />
             </button>
+            {isNativeApp() && (
+              <button onClick={exitApp} aria-label={t("exit_app")} title={t("exit_app")}
+                style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 999, padding: 8, cursor: "pointer", display: "flex", color: C.faint }}>
+                <X size={15} />
+              </button>
+            )}
           </div>
         </header>
 
@@ -1812,16 +1818,6 @@ export default function Mustaghfirin() {
               <a href="/privacy" style={{ fontSize: 13.5, color: C.gold }}>{t("privacy_policy")} →</a>
             </div>
 
-            {/* EXIT (native app only) */}
-            {isNativeApp() && (
-              <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
-                <button onClick={exitApp}
-                  style={{ background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 10, padding: "10px 14px", fontSize: 13, cursor: "pointer" }}>
-                  {t("exit_app")}
-                </button>
-              </div>
-            )}
-
             {/* DANGER */}
             {!guest && (
             <div style={{ background: C.surface, border: "1px solid #4A2020", borderRadius: 14, padding: 16, marginBottom: 30 }}>
@@ -1857,7 +1853,7 @@ export default function Mustaghfirin() {
       {/* Bottom nav */}
       <nav style={{
         position: "fixed", bottom: 0, left: 0, right: 0, background: `${C.surface}F2`, backdropFilter: "blur(12px)",
-        borderTop: `1px solid ${C.line}`, display: "flex", justifyContent: "space-around", padding: "10px 8px 16px", zIndex: 10,
+        borderTop: `1px solid ${C.line}`, display: "flex", justifyContent: "space-around", padding: "10px 8px calc(16px + env(safe-area-inset-bottom))", zIndex: 10,
       }}>
         {[
           { id: "count", icon: Flame, label: t("nav_count") },
