@@ -39,6 +39,7 @@ const T = {
   email_sent: { en: "Check your inbox — we sent a sign-in link to", ur: "اپنا اِن باکس دیکھیں — ہم نے سائن اِن لنک بھیجا ہے" },
   open_this_device: { en: "Open it on this device.", ur: "اسے اسی ڈیوائس پر کھولیں۔" },
   privacy_policy: { en: "Privacy Policy", ur: "پرائیویسی پالیسی" },
+  exit_app: { en: "Exit App", ur: "ایپ بند کریں" },
 
   /* onboarding */
   salam: { en: "As-salamu alaykum 👋", ur: "السلام علیکم 👋" },

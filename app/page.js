@@ -14,6 +14,14 @@ const C = {
   muted: "#8BA79A", faint: "#5C776C", ringTrack: "#1E3A33", warn: "#D98F4E",
 };
 
+// A function, not a module-level constant: Capacitor's bridge (window.Capacitor)
+// attaches asynchronously, and this module can finish evaluating before it
+// does — a constant computed once at parse time would freeze in as `false`
+// and never notice the bridge arriving a moment later. Calling this fresh
+// wherever it's needed avoids that race entirely.
+const isNativeApp = () => typeof window !== "undefined" && !!window.Capacitor?.isNativePlatform?.();
+const NATIVE_REDIRECT_URL = "mustaghfirin://login-callback";
+
 const APP_NAME = "Al-Mustaghfirin";   // "…and those who seek forgiveness before dawn." — Quran 3:17
 const DAILY_GOAL = 1000;
 const JOURNEY_DAYS = 180;
@@ -453,6 +461,28 @@ export default function Mustaghfirin() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // Native app: Google sign-in opens in an in-app browser tab (Chrome Custom
+  // Tabs via @capacitor/browser) since Google blocks its OAuth screen inside
+  // embedded WebViews. This listens for the custom-scheme redirect back into
+  // the app once that flow completes, and exchanges the PKCE code for a
+  // session in the app's own WebView storage — without it, sign-in would
+  // complete in the browser tab but never actually log the app in.
+  useEffect(() => {
+    if (!isNativeApp() || !window.Capacitor?.Plugins?.App) return;
+    const handle = window.Capacitor.Plugins.App.addListener("appUrlOpen", async ({ url }) => {
+      if (!url || !url.includes("login-callback")) return;
+      try {
+        const code = new URL(url).searchParams.get("code");
+        if (code) await supabase.auth.exchangeCodeForSession(code);
+      } catch (e) {
+        console.error("Native sign-in exchange failed:", e);
+      } finally {
+        window.Capacitor.Plugins.Browser?.close();
+      }
+    });
+    return () => { handle?.then?.((h) => h.remove()); };
+  }, []);
+
   /* ------- load profile + counts ------- */
   const loadAll = useCallback(async () => {
     if (!session?.user) return;
@@ -724,6 +754,24 @@ export default function Mustaghfirin() {
   /* ------- auth actions ------- */
   const signInGoogle = async () => {
     setAuthBusy(true);
+    if (isNativeApp()) {
+      // Google refuses to show its sign-in screen inside an embedded WebView,
+      // so this opens it in a Chrome Custom Tab instead; the appUrlOpen
+      // listener above picks up the redirect back into the app.
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: NATIVE_REDIRECT_URL, skipBrowserRedirect: true },
+      });
+      if (error || !data?.url) {
+        console.error("Google sign-in failed:", error);
+        setAuthBusy(false);
+        alert("Could not sign in with Google. Please check your connection and try again.");
+        return;
+      }
+      await window.Capacitor?.Plugins?.Browser?.open({ url: data.url });
+      setAuthBusy(false);
+      return;
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: typeof window !== "undefined" ? window.location.origin : undefined },
@@ -753,6 +801,8 @@ export default function Mustaghfirin() {
     await supabase.auth.signOut();
     setProfile(undefined); setDays({}); setDataReady(false);
   };
+
+  const exitApp = () => window.Capacitor?.Plugins?.App?.exitApp();
 
   // 8 hex chars (~4.3B possibilities) rather than 4 (~65K) — at 4, a
   // leaderboard of a few hundred anonymous users had a real chance of two
@@ -1761,6 +1811,16 @@ export default function Mustaghfirin() {
             <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
               <a href="/privacy" style={{ fontSize: 13.5, color: C.gold }}>{t("privacy_policy")} →</a>
             </div>
+
+            {/* EXIT (native app only) */}
+            {isNativeApp() && (
+              <div style={{ background: C.surface, border: `1px solid ${C.line}`, borderRadius: 14, padding: 16, marginBottom: 10 }}>
+                <button onClick={exitApp}
+                  style={{ background: "transparent", color: C.muted, border: `1px solid ${C.line}`, borderRadius: 10, padding: "10px 14px", fontSize: 13, cursor: "pointer" }}>
+                  {t("exit_app")}
+                </button>
+              </div>
+            )}
 
             {/* DANGER */}
             {!guest && (
