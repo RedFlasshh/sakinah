@@ -96,6 +96,14 @@ const BENEFITS = [
   { t: "Purifies the Soul", b: "Istighfar erases sins and washes the soul clean, again and again.", s: "Reflection", c: "Reflection" },
   { t: "Antidote to Despair", b: "Hopelessness is Shaytan's weapon; istighfar is the believer's answer.", s: "Reflection", c: "Reflection" },
   { t: "Multiply Your Reward", b: "Remind others to make istighfar, and you share in the reward of everyone who acts on it.", s: "Reflection", c: "Reflection" },
+  { t: "More Than Erasure", b: "Istighfar isn't a delete key for sin — it repairs the bond that sin fractured, between you and your Lord.", s: "Reflection", c: "Reflection" },
+  { t: "The Veil Lifted", b: "“Rather, the stain has covered their hearts of that which they were earning.” Istighfar wipes away that stain — restoring what sin had veiled.", s: "Quran — Al-Mutaffifin 83:14", c: "Quran" },
+  { t: "Two Ropes, One Pull", b: "Every sin frays two lines at once — your tie to Allah and your tie to those around you. Istighfar mends both together.", s: "Reflection", c: "Reflection" },
+  { t: "From Estrangement to Belonging", b: "Sin leaves a quiet distance, even from your own family and friends. Returning to Allah has a way of restoring ease with people too.", s: "Scholars & Reflection", c: "Reflection" },
+  { t: "One Word, Every Ripple", b: "Rain, wealth, children, gardens, rivers — in Surah Nuh a single word ripples outward until it touches everything around you.", s: "Reflection — on Quran Nuh 71:10–12", c: "Reflection" },
+  { t: "A Comma, Not a Full Stop", b: "Sin tempts you to believe the story is over. Istighfar turns the full stop into a comma — the sentence with Allah continues.", s: "Reflection", c: "Reflection" },
+  { t: "The Vertical and the Horizontal", b: "One line connects you to Allah, another to His creation. Neglect either and both weaken — istighfar strengthens each at once.", s: "Scholars & Reflection", c: "Reflection" },
+  { t: "Realigning With Your Fitrah", b: "Every soul is created inclined toward its Lord; sin pulls it off course. Istighfar is the return to that original alignment.", s: "Reflection", c: "Reflection" },
 ];
 
 const CAT_COLOR = { Quran: "#C9A24B", Hadith: "#3FAE7C", Scholars: "#7FB3D5", Reflection: "#B08FC9" };
