@@ -8,10 +8,14 @@ import { LANGS, flagToLang, makeT } from "./i18n";
 /* ------------------------------------------------------------------ */
 /* Design tokens                                                       */
 /* ------------------------------------------------------------------ */
+// Neutral/functional text tones — fixed across every level for readability.
+// Only bg/surface/line/gold/ring shift per level (see LEVELS below); those
+// are what carry the "more royal" feeling as the journey progresses.
+const NEUTRALS = { ivory: "#F4EFE2", muted: "#8BA79A", faint: "#5C776C", warn: "#D98F4E" };
 const C = {
+  ...NEUTRALS,
   bg: "#0B1917", surface: "#122622", surface2: "#1A332D", line: "#22423A",
-  gold: "#C9A24B", goldBright: "#E8CD86", ivory: "#F4EFE2",
-  muted: "#8BA79A", faint: "#5C776C", ringTrack: "#1E3A33", warn: "#D98F4E",
+  gold: "#C9A24B", goldBright: "#E8CD86", ringTrack: "#1E3A33",
 };
 
 // A function, not a module-level constant: Capacitor's bridge (window.Capacitor)
@@ -193,17 +197,41 @@ const bandFor = (streak) => {
   return { key: "band_returning", color: C.faint };
 };
 
+/* Each level carries a full palette. The app's whole visual theme (bg,
+   surfaces, borders, gold accents) is read from the current level's theme —
+   see `const C = level.theme` inside the component — so the interface
+   itself deepens as the journey progresses, not just one badge. Neutral
+   text tones (ivory/muted/faint/warn) stay fixed across levels for
+   readability; bg/surface/line/gold/ring are what carry the "more royal"
+   feeling, moving teal → emerald → gold → sapphire → royal violet+gold. */
 const LEVELS = [
-  { id: 1, name: "Qatrah", en: "A Drop", days: 0, ar: "قَطْرَة", ring: "#7FB3D5",
-    note: "Every rain begins with one drop. You have begun." },
-  { id: 2, name: "Baarish", en: "Rain", days: 180, ar: "مَطَر", ring: "#5FA8C9",
-    note: "“He will send rain to you in abundance.” — Surah Nuh 71:11" },
-  { id: 3, name: "Nahr", en: "Stream", days: 540, ar: "نَهْر", ring: "#3FAE7C",
-    note: "What fell as drops now runs as a stream." },
-  { id: 4, name: "Hadiqa", en: "Garden", days: 1080, ar: "حَديقَة", ring: "#C9A24B",
-    note: "“And He will make for you gardens.” — Surah Nuh 71:12" },
-  { id: 5, name: "Anhar", en: "Rivers", days: 1800, ar: "أَنْهَار", ring: "#E8CD86",
-    note: "“And He will make for you rivers.” — the last of the promises." },
+  { id: 1, name: "Qatrah", en: "A Drop", days: 0, ar: "قَطْرَة",
+    note: "Every rain begins with one drop. You have begun.",
+    theme: { ...NEUTRALS, bg: "#0B1917", surface: "#122622", surface2: "#1A332D", line: "#22423A", ringTrack: "#1E3A33", gold: "#C9A24B", goldBright: "#E8CD86", ring: "#7FB3D5" } },
+  { id: 2, name: "Wabl", en: "Downpour", days: 7, ar: "وَابِل",
+    note: "“Like a garden on a hill: heavy rain (wabil) falls on it, and it yields double its harvest.” — Surah Al-Baqarah 2:265",
+    theme: { ...NEUTRALS, bg: "#081920", surface: "#0E252E", surface2: "#14323E", line: "#1C4756", ringTrack: "#1A3F4C", gold: "#C9A24B", goldBright: "#E8CD86", ring: "#3EC6D9" } },
+  { id: 3, name: "Chilla", en: "The Forty", days: 40, ar: "چِلَّہ",
+    note: "Forty days of returning, without missing a single one. A discipline the righteous before us kept too.",
+    theme: { ...NEUTRALS, bg: "#0A1B14", surface: "#10261C", surface2: "#163628", line: "#1F4A34", ringTrack: "#1D4230", gold: "#CBA84F", goldBright: "#EAD08A", ring: "#3FAE7C" } },
+  { id: 4, name: "Nahr", en: "Stream", days: 100, ar: "نَهْر",
+    note: "What fell as drops now runs as a stream — constant, not occasional.",
+    theme: { ...NEUTRALS, bg: "#171B0A", surface: "#232810", surface2: "#333A16", line: "#4A5320", ringTrack: "#3E4820", gold: "#CFAC55", goldBright: "#ECD48F", ring: "#A9C23F" } },
+  { id: 5, name: "Hadiqa", en: "Garden", days: 180, ar: "حَديقَة",
+    note: "“And He will make for you gardens.” — Surah Nuh 71:12",
+    theme: { ...NEUTRALS, bg: "#1A1509", surface: "#26200D", surface2: "#382E12", line: "#4E4118", ringTrack: "#463A16", gold: "#D4AD52", goldBright: "#F0D591", ring: "#C9A24B" } },
+  { id: 6, name: "Anhar", en: "Rivers", days: 365, ar: "أَنْهَار",
+    note: "“And He will make for you rivers.” A full year of returning, day after day.",
+    theme: { ...NEUTRALS, bg: "#0D1220", surface: "#161C30", surface2: "#212B45", line: "#303E5E", ringTrack: "#2B3852", gold: "#D8B45A", goldBright: "#F2D998", ring: "#5B7FD4" } },
+  { id: 7, name: "Baraka", en: "Blessing", days: 540, ar: "بَرَكَة",
+    note: "Eighteen months in. What began as a habit has become a source of blessing in ways you can no longer separate from the practice itself.",
+    theme: { ...NEUTRALS, bg: "#1F0E14", surface: "#2B141C", surface2: "#3E1C28", line: "#5A2838", ringTrack: "#4C2230", gold: "#DEBB63", goldBright: "#F5DE9F", ring: "#D46B8F" } },
+  { id: 8, name: "Noor", en: "Light", days: 1080, ar: "نُور",
+    note: "Three years of a tongue kept moist with istighfar. The Prophet ﷺ said dhikr is light — you are carrying it now.",
+    theme: { ...NEUTRALS, bg: "#1F1608", surface: "#2B1F0C", surface2: "#3E2C12", line: "#5A4118", ringTrack: "#4C3714", gold: "#E4C56D", goldBright: "#FBEFC0", ring: "#F2DE8F" } },
+  { id: 9, name: "Sakinah", en: "Tranquility", days: 1800, ar: "سَكِينَة",
+    note: "Five years constant. “It is He who sent down tranquility (sakinah) into the hearts of the believers.” — Surah Al-Fath 48:4",
+    theme: { ...NEUTRALS, bg: "#1C1030", surface: "#2A1846", surface2: "#3D2260", line: "#573182", ringTrack: "#4A2A70", gold: "#EACB74", goldBright: "#FBEBB0", ring: "#C9A2F0" } },
 ];
 const levelFor = (completedDays) => {
   let cur = LEVELS[0];
@@ -346,16 +374,16 @@ const heatColor = (val) => {
   return "#4A4327";                                // a little
 };
 
-const inputStyle = { width: "100%", background: C.bg, border: `1px solid ${C.line}`, borderRadius: 10, padding: "12px 14px", color: C.ivory, fontSize: 15 };
-const goldBtn = { background: C.gold, color: "#1B1508", fontWeight: 700, border: "none", borderRadius: 10, padding: "12px 18px", fontSize: 15, cursor: "pointer", width: "100%" };
-
-/* Shell at module level — dir controls LTR/RTL for the whole app */
-const Shell = ({ children, dir = "ltr" }) => (
-  <div dir={dir} style={{ background: C.bg, minHeight: "100vh", color: C.ivory, position: "relative", overflow: "hidden" }}>
+/* Shell at module level — dir controls LTR/RTL for the whole app.
+   theme defaults to the level-1 (Qatrah) palette so anything rendered
+   before a level is known (e.g. a very first paint) still looks right;
+   the component always passes its current level's theme explicitly. */
+const Shell = ({ children, dir = "ltr", theme = C }) => (
+  <div dir={dir} style={{ background: theme.bg, minHeight: "100vh", color: theme.ivory, position: "relative", overflow: "hidden", transition: "background 0.6s ease" }}>
     <svg width="100%" height="100%" style={{ position: "absolute", inset: 0, opacity: 0.05, pointerEvents: "none" }}>
       <defs>
         <pattern id="star8" width="72" height="72" patternUnits="userSpaceOnUse">
-          <path d="M36 6 L43 29 L66 36 L43 43 L36 66 L29 43 L6 36 L29 29 Z" fill="none" stroke={C.gold} strokeWidth="1" />
+          <path d="M36 6 L43 29 L66 36 L43 43 L36 66 L29 43 L6 36 L29 29 Z" fill="none" stroke={theme.gold} strokeWidth="1" />
         </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#star8)" />
@@ -435,6 +463,15 @@ export default function Mustaghfirin() {
   const completedDays = Object.values(days).filter((v) => v >= DAILY_GOAL).length;
   const totalAll = Object.values(days).reduce((a, b) => a + b, 0);
   const pct = Math.min(todayCount / DAILY_GOAL, 1);
+
+  // The current level's palette becomes THE app theme for this render — every
+  // existing `C.xxx` reference below (there are ~300) picks this up via normal
+  // JS shadowing, no per-callsite edits needed. Same for inputStyle/goldBtn,
+  // which depend on C and so must be redefined locally alongside it.
+  const { cur: level, next: nextLevel } = levelFor(completedDays);
+  const C = level.theme;
+  const inputStyle = { width: "100%", background: C.bg, border: `1px solid ${C.line}`, borderRadius: 10, padding: "12px 14px", color: C.ivory, fontSize: 15 };
+  const goldBtn = { background: C.gold, color: "#1B1508", fontWeight: 700, border: "none", borderRadius: 10, padding: "12px 18px", fontSize: 15, cursor: "pointer", width: "100%" };
 
   useEffect(() => {
     const doy = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
@@ -998,7 +1035,7 @@ export default function Mustaghfirin() {
       setIntroStep(null);
     };
     return (
-      <Shell dir={dir}>
+      <Shell dir={dir} theme={C}>
         <div style={{ maxWidth: 460, margin: "0 auto", padding: "calc(36px + env(safe-area-inset-top)) 22px 40px", position: "relative", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", gap: 6, marginBottom: 28 }}>
             {INTRO.map((_, i) => (
@@ -1040,13 +1077,13 @@ export default function Mustaghfirin() {
   }
 
   if (session === undefined && !guest) {
-    return <Shell dir={dir}><div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>{t("opening")}</div></Shell>;
+    return <Shell dir={dir} theme={C}><div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>{t("opening")}</div></Shell>;
   }
 
   /* ------- login ------- */
   if (!session && !guest) {
     return (
-      <Shell dir={dir}>
+      <Shell dir={dir} theme={C}>
         <div style={{ maxWidth: 420, margin: "0 auto", padding: "calc(60px + env(safe-area-inset-top)) 22px", position: "relative" }} className="fadeUp">
           <div style={{ textAlign: "center", marginBottom: 36 }}>
             <div className="amiri" style={{ fontSize: 40, color: C.goldBright, lineHeight: 1.6 }}>أَسْتَغْفِرُ الله</div>
@@ -1117,7 +1154,7 @@ export default function Mustaghfirin() {
       { id: "name", title: t("vis_name_title"), desc: t("vis_name_desc") },
     ];
     return (
-      <Shell dir={dir}>
+      <Shell dir={dir} theme={C}>
         <div style={{ maxWidth: 420, margin: "0 auto", padding: "calc(44px + env(safe-area-inset-top)) 22px", position: "relative" }} className="fadeUp">
           <div className="display" style={{ fontSize: 26, fontWeight: 600, marginBottom: 6 }}>{t("salam")}</div>
           <div style={{ fontSize: 13.5, color: C.muted, marginBottom: 20, lineHeight: 1.6 }}>
@@ -1168,7 +1205,7 @@ export default function Mustaghfirin() {
   }
 
   if (profile === undefined && !guest) {
-    return <Shell dir={dir}><div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>{t("loading_journey")}</div></Shell>;
+    return <Shell dir={dir} theme={C}><div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: C.muted }}>{t("loading_journey")}</div></Shell>;
   }
 
   // Guests use a lightweight local profile (never written to the server).
@@ -1179,13 +1216,12 @@ export default function Mustaghfirin() {
   const daily = BENEFITS[dailyIdx];
   const benefit = BENEFITS[browseIdx];
   const myBand = bandFor(streak);
-  const { cur: level, next: nextLevel } = levelFor(completedDays);
   const nextMilestone = MILESTONES.find((m) => m.days > completedDays) || null;
   const showRemindPrompt =
     !effectiveProfile.reminder_enabled && !remindDismissed && completedDays >= 3 && !guest;
 
   return (
-    <Shell dir={dir}>
+    <Shell dir={dir} theme={C}>
       {encourage && (
         <div onClick={() => setEncourage(null)}
           style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(6,14,12,0.72)", backdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 26 }}>
@@ -1454,8 +1490,8 @@ export default function Mustaghfirin() {
               {t("journey_sub")}
             </div>
 
-            <div style={{ background: C.surface2, border: `1px solid ${level.ring}55`, borderRadius: 18, padding: 20, marginBottom: 12, textAlign: "center" }}>
-              <div className="amiri" style={{ fontSize: 26, color: level.ring, lineHeight: 1.6 }}>{level.ar}</div>
+            <div style={{ background: C.surface2, border: `1px solid ${level.theme.ring}55`, borderRadius: 18, padding: 20, marginBottom: 12, textAlign: "center" }}>
+              <div className="amiri" style={{ fontSize: 26, color: level.theme.ring, lineHeight: 1.6 }}>{level.ar}</div>
               <div className="display" style={{ fontSize: 26, fontWeight: 600, marginTop: 2 }}>{level.name}</div>
               <div style={{ fontSize: 11, letterSpacing: 2.5, textTransform: "uppercase", color: C.faint, marginTop: 2 }}>
                 {t("level_word")} {level.id} · {level.en}
@@ -1468,7 +1504,7 @@ export default function Mustaghfirin() {
                     <div style={{
                       height: "100%",
                       width: `${Math.min(((completedDays - level.days) / (nextLevel.days - level.days)) * 100, 100)}%`,
-                      background: `linear-gradient(90deg, ${level.ring}, ${nextLevel.ring})`,
+                      background: `linear-gradient(90deg, ${level.theme.ring}, ${nextLevel.theme.ring})`,
                       borderRadius: 999, transition: "width .5s ease",
                     }} />
                   </div>
