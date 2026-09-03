@@ -104,6 +104,15 @@ const BENEFITS = [
   { t: "A Comma, Not a Full Stop", b: "Sin tempts you to believe the story is over. Istighfar turns the full stop into a comma — the sentence with Allah continues.", s: "Reflection", c: "Reflection" },
   { t: "The Vertical and the Horizontal", b: "One line connects you to Allah, another to His creation. Neglect either and both weaken — istighfar strengthens each at once.", s: "Scholars & Reflection", c: "Reflection" },
   { t: "Realigning With Your Fitrah", b: "Every soul is created inclined toward its Lord; sin pulls it off course. Istighfar is the return to that original alignment.", s: "Reflection", c: "Reflection" },
+  { t: "Yunus in the Belly of the Whale", b: "“There is no god but You, glory be to You — I have indeed been of the wrongdoers.” The Prophet ﷺ said no Muslim ever calls on Allah with this dua for anything except He answers it.", s: "Hadith — Tirmidhi, on Quran 21:87", c: "Hadith" },
+  { t: "The King Who Began With Forgiveness", b: "Before asking for a kingdom unmatched by anyone after him, Sulaiman (AS) first said: “My Lord, forgive me.” Even the ask was preceded by istighfar.", s: "Quran — Sad 38:35", c: "Quran" },
+  { t: "Humanity's First Dua", b: "After the very first sin on earth, the words taught to Adam and Hawwa to say back to Allah were words of istighfar — the first human dua was itself a request for forgiveness.", s: "Quran — Al-A'raf 7:23", c: "Quran" },
+  { t: "Clearing the Line First", b: "Scholars often describe sin as static on the line between servant and Lord — istighfar clears the line before the request is even spoken.", s: "Scholars & Reflection", c: "Reflection" },
+  { t: "The Order Matters", b: "Confess, then ask. From Adam to Yunus to Sulaiman, istighfar wasn't a footnote to dua — it was the opening line.", s: "Reflection", c: "Reflection" },
+  { t: "Sealing Every Gathering", b: "The Prophet ﷺ taught closing even good gatherings with a set istighfar — “Kaffaratul-Majlis” — sealing whatever slipped in along the way.", s: "Hadith — Abu Dawud, Tirmidhi", c: "Hadith" },
+  { t: "Counted, Not Estimated", b: "His companions reported counting him seek forgiveness a hundred times in a single sitting — not a rough guess, an actual count.", s: "Hadith — Abu Dawud, Tirmidhi, Ibn Majah", c: "Hadith" },
+  { t: "An Opening and a Closing Seal", b: "Istighfar bookended his day — among the remembrances at waking, and again before sleep.", s: "Reflection", c: "Reflection" },
+  { t: "More Than a Formula", b: "It wasn't recited on autopilot. Those around him describe a man visibly present in it — a habit lived, not just repeated.", s: "Reflection", c: "Reflection" },
 ];
 
 const CAT_COLOR = { Quran: "#C9A24B", Hadith: "#3FAE7C", Scholars: "#7FB3D5", Reflection: "#B08FC9" };
