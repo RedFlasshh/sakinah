@@ -1,4 +1,4 @@
-package app.vercel.sakinah_rho.twa;
+package com.mustaghfirin.app;
 
 import com.getcapacitor.BridgeActivity;
 
