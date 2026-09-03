@@ -35,6 +35,7 @@ const LANG_KEY = "app-lang";
 const GUEST_KEY = "guest-mode";      // "1" when using the app without an account
 const GUEST_DAYS = "guest-days";     // guest counts live here (device-only)
 const CONTACT_EMAIL = "ygm786@gmail.com"; // corrections & privacy contact — keep in sync with privacy page
+const LEVEL_SEEN_KEY = "sakinah-level-seen"; // highest level id already celebrated, so the level-up modal fires once per level, on the device that earns it
 
 /* ------------------------------------------------------------------ */
 /* 60 benefits                                                         */
@@ -426,6 +427,7 @@ export default function Mustaghfirin() {
   const [lang, setLang] = useState("en");
   const [guest, setGuest] = useState(false); // using app without an account
   const [encourage, setEncourage] = useState(null); // {key, text} popup on open
+  const [levelUp, setLevelUp] = useState(null); // level object, shown once when newly reached
   const [chartRange, setChartRange] = useState("week"); // week | month | quarter | year
 
   const flushTimer = useRef(null);
@@ -607,6 +609,26 @@ export default function Mustaghfirin() {
     if (!session?.user) { setProfile(undefined); setDays({}); setDataReady(false); return; }
     loadAll();
   }, [session, loadAll]);
+
+  // Level-up announcement: the whole app's theme changes silently on its own
+  // (see `const C = level.theme` above) unless we tell the user why. Fires
+  // once per level actually reached — never for level 1 (Qatrah), which is
+  // everyone's starting point, not something to "congratulate". Waits for
+  // dataReady so a fresh load (which starts from `days: {}`, i.e. level 1)
+  // can't misfire before the real counts arrive. Existing users who update
+  // into this feature already past level 1 will correctly see it once on
+  // their next open, introducing the system rather than leaving them to
+  // wonder why the app suddenly looks different.
+  useEffect(() => {
+    if (!dataReady || level.id <= 1) return;
+    try {
+      const seen = parseInt(localStorage.getItem(LEVEL_SEEN_KEY) || "0", 10);
+      if (level.id > seen) {
+        setLevelUp(level);
+        localStorage.setItem(LEVEL_SEEN_KEY, String(level.id));
+      }
+    } catch (e) {}
+  }, [dataReady, level.id]);
 
   /* ------- flush queued deltas atomically ------- */
   const flushQueue = useCallback(async () => {
@@ -1236,6 +1258,31 @@ export default function Mustaghfirin() {
           </div>
         </div>
       )}
+      {levelUp && (
+        <div onClick={() => setLevelUp(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 51, background: "rgba(6,14,12,0.78)", backdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 26 }}>
+          <div onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 380, width: "100%", background: C.surface2, border: `1px solid ${levelUp.theme.ring}66`, borderRadius: 20, padding: 26, textAlign: "center" }} className="fadeUp">
+            <div style={{ fontSize: 10.5, letterSpacing: 3, textTransform: "uppercase", color: levelUp.theme.ring, marginBottom: 10 }}>{t("level_up_title")}</div>
+            <div className="amiri" style={{ fontSize: 34, color: levelUp.theme.ring, lineHeight: 1.5 }}>{levelUp.ar}</div>
+            <div className="display" style={{ fontSize: 26, fontWeight: 600, marginTop: 4 }}>{levelUp.name}</div>
+            <div style={{ fontSize: 11, letterSpacing: 2.5, textTransform: "uppercase", color: C.faint, marginTop: 2 }}>
+              {t("level_word")} {levelUp.id} · {levelUp.en}
+            </div>
+            <div style={{ fontSize: 13.5, color: C.muted, marginTop: 14, lineHeight: 1.6, fontStyle: "italic" }}>{levelUp.note}</div>
+            <div style={{ fontSize: 12.5, color: C.ivory, marginTop: 16, lineHeight: 1.6 }}>{t("level_up_theme_note")}</div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 16 }}>
+              {[levelUp.theme.ring, levelUp.theme.gold, levelUp.theme.goldBright].map((c, i) => (
+                <div key={i} style={{ width: 22, height: 22, borderRadius: 6, background: c }} />
+              ))}
+            </div>
+            <button onClick={() => setLevelUp(null)}
+              style={{ ...goldBtn, background: levelUp.theme.ring, marginTop: 22, width: "auto", padding: "10px 28px" }}>
+              {t("continue")}
+            </button>
+          </div>
+        </div>
+      )}
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "calc(20px + env(safe-area-inset-top)) 18px calc(96px + env(safe-area-inset-bottom))", position: "relative" }}>
         {/* Header */}
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
@@ -1538,10 +1585,16 @@ export default function Mustaghfirin() {
               <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint, marginBottom: 10 }}>{t("milestones")}</div>
               {MILESTONES.map((m) => {
                 const done = completedDays >= m.days;
+                const mLevel = LEVELS.find((l) => l.days === m.days); // every milestone doubles as a level
                 return (
                   <div key={m.days} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
                     <span style={{ fontSize: 14, color: done ? C.goldBright : C.faint, width: 18 }}>{done ? "✦" : "○"}</span>
-                    <span style={{ fontSize: 13.5, color: done ? C.ivory : C.faint, flex: 1 }}>{m.label}</span>
+                    {mLevel && (
+                      <span style={{ width: 9, height: 9, borderRadius: 99, background: done ? mLevel.theme.ring : C.faint, flexShrink: 0 }} />
+                    )}
+                    <span style={{ fontSize: 13.5, color: done ? C.ivory : C.faint, flex: 1 }}>
+                      {m.label}{mLevel ? ` — ${mLevel.name}` : ""}
+                    </span>
                     <span style={{ fontSize: 11.5, color: C.faint }}>{m.days}d</span>
                   </div>
                 );

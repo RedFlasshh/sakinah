@@ -102,6 +102,8 @@ const T = {
   journey_title: { en: "Your Journey", ur: "آپ کا سفر" },
   journey_sub: { en: "Measured in days completed, not in unbroken chains. Illness and travel take nothing away from you.", ur: "مکمل دنوں میں ماپا جاتا ہے، نہ کہ بلا تعطل سلسلوں میں۔ بیماری اور سفر آپ سے کچھ نہیں چھینتے۔" },
   level_word: { en: "Level", ur: "درجہ" },
+  level_up_title: { en: "New Level Reached", ur: "نیا درجہ حاصل ہوا" },
+  level_up_theme_note: { en: "The whole app's colours have just changed to mark it — the deeper the journey, the richer the theme.", ur: "اس کی یاد میں پوری ایپ کے رنگ بدل گئے ہیں — سفر جتنا گہرا، تھیم اتنی ہی شاندار۔" },
   days_to: { en: "{n} days to {name} ({en})", ur: "{name} ({en}) تک {n} دن" },
   all_promises: { en: "✦ Every promise of Surah Nuh, walked through ✦", ur: "✦ سورۃ نوح کا ہر وعدہ، طے کیا گیا ✦" },
   of_milestone: { en: "of {n} — {label}", ur: "{n} میں سے — {label}" },
