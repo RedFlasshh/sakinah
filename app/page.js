@@ -982,7 +982,7 @@ export default function Mustaghfirin() {
     };
     return (
       <Shell dir={dir}>
-        <div style={{ maxWidth: 460, margin: "0 auto", padding: "36px 22px 40px", position: "relative", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        <div style={{ maxWidth: 460, margin: "0 auto", padding: "calc(36px + env(safe-area-inset-top)) 22px 40px", position: "relative", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", gap: 6, marginBottom: 28 }}>
             {INTRO.map((_, i) => (
               <div key={i} style={{ flex: 1, height: 3, borderRadius: 99, background: i <= introStep ? C.gold : C.line }} />
@@ -1030,7 +1030,7 @@ export default function Mustaghfirin() {
   if (!session && !guest) {
     return (
       <Shell dir={dir}>
-        <div style={{ maxWidth: 420, margin: "0 auto", padding: "60px 22px", position: "relative" }} className="fadeUp">
+        <div style={{ maxWidth: 420, margin: "0 auto", padding: "calc(60px + env(safe-area-inset-top)) 22px", position: "relative" }} className="fadeUp">
           <div style={{ textAlign: "center", marginBottom: 36 }}>
             <div className="amiri" style={{ fontSize: 40, color: C.goldBright, lineHeight: 1.6 }}>أَسْتَغْفِرُ الله</div>
             <div className="display" style={{ fontSize: 34, fontWeight: 600, marginTop: 8 }}>{APP_NAME}</div>
@@ -1101,7 +1101,7 @@ export default function Mustaghfirin() {
     ];
     return (
       <Shell dir={dir}>
-        <div style={{ maxWidth: 420, margin: "0 auto", padding: "44px 22px", position: "relative" }} className="fadeUp">
+        <div style={{ maxWidth: 420, margin: "0 auto", padding: "calc(44px + env(safe-area-inset-top)) 22px", position: "relative" }} className="fadeUp">
           <div className="display" style={{ fontSize: 26, fontWeight: 600, marginBottom: 6 }}>{t("salam")}</div>
           <div style={{ fontSize: 13.5, color: C.muted, marginBottom: 20, lineHeight: 1.6 }}>
             {t("onboard_sub")}
@@ -1183,7 +1183,7 @@ export default function Mustaghfirin() {
           </div>
         </div>
       )}
-      <div style={{ maxWidth: 460, margin: "0 auto", padding: "20px 18px calc(96px + env(safe-area-inset-bottom))", position: "relative" }}>
+      <div style={{ maxWidth: 460, margin: "0 auto", padding: "calc(20px + env(safe-area-inset-top)) 18px calc(96px + env(safe-area-inset-bottom))", position: "relative" }}>
         {/* Header */}
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <div>
