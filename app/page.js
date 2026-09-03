@@ -241,16 +241,11 @@ const levelFor = (completedDays) => {
   return { cur, next };
 };
 
-const MILESTONES = [
-  { days: 7, label: "One week" },
-  { days: 40, label: "Chilla — forty days" },
-  { days: 100, label: "One hundred days" },
-  { days: 180, label: "The six-month journey" },
-  { days: 365, label: "One full year" },
-  { days: 540, label: "Eighteen months" },
-  { days: 1080, label: "Three years" },
-  { days: 1800, label: "Five years" },
-];
+// Derived straight from LEVELS (skipping Qatrah/day 0, the starting point,
+// not a milestone) so the checklist can never drift out of sync with the
+// level names/colors again — one source of truth instead of two lists that
+// have to be kept in step by hand.
+const MILESTONES = LEVELS.filter((l) => l.days > 0).map((l) => ({ days: l.days, label: `${l.name} — ${l.en}`, level: l }));
 
 const INTRO = [
   {
@@ -1585,16 +1580,11 @@ export default function Mustaghfirin() {
               <div style={{ fontSize: 10.5, letterSpacing: 1.5, textTransform: "uppercase", color: C.faint, marginBottom: 10 }}>{t("milestones")}</div>
               {MILESTONES.map((m) => {
                 const done = completedDays >= m.days;
-                const mLevel = LEVELS.find((l) => l.days === m.days); // every milestone doubles as a level
                 return (
                   <div key={m.days} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
                     <span style={{ fontSize: 14, color: done ? C.goldBright : C.faint, width: 18 }}>{done ? "✦" : "○"}</span>
-                    {mLevel && (
-                      <span style={{ width: 9, height: 9, borderRadius: 99, background: done ? mLevel.theme.ring : C.faint, flexShrink: 0 }} />
-                    )}
-                    <span style={{ fontSize: 13.5, color: done ? C.ivory : C.faint, flex: 1 }}>
-                      {m.label}{mLevel ? ` — ${mLevel.name}` : ""}
-                    </span>
+                    <span style={{ width: 9, height: 9, borderRadius: 99, background: done ? m.level.theme.ring : C.faint, flexShrink: 0 }} />
+                    <span style={{ fontSize: 13.5, color: done ? C.ivory : C.faint, flex: 1 }}>{m.label}</span>
                     <span style={{ fontSize: 11.5, color: C.faint }}>{m.days}d</span>
                   </div>
                 );
