@@ -248,7 +248,7 @@ const levelFor = (completedDays) => {
 // not a milestone) so the checklist can never drift out of sync with the
 // level names/colors again — one source of truth instead of two lists that
 // have to be kept in step by hand.
-const MILESTONES = LEVELS.filter((l) => l.days > 0).map((l) => ({ days: l.days, label: `${l.name} — ${l.en}`, level: l }));
+const MILESTONES = LEVELS.map((l) => ({ days: l.days, label: `${l.name} — ${l.en}`, level: l }));
 
 const INTRO = [
   {
