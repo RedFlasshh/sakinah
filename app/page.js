@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { Flame, BookOpen, Globe2, Map, RotateCcw, Volume2, VolumeX, LogOut, Mail, CloudOff, X } from "lucide-react";
+import { Flame, BookOpen, Globe2, Map, RotateCcw, Volume2, VolumeX, LogOut, Mail, CloudOff, X, Share2 } from "lucide-react";
 import { LANGS, flagToLang, makeT } from "./i18n";
 
 /* ------------------------------------------------------------------ */
@@ -878,6 +878,23 @@ export default function Mustaghfirin() {
 
   const exitApp = () => window.Capacitor?.Plugins?.App?.exitApp();
 
+  const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.mustaghfirin.app";
+  const shareProgress = async (streakDays, bandLabel) => {
+    const text = streakDays > 0
+      ? `I'm on a ${streakDays}-day istighfar streak on Al-Mustaghfirin — 1,000 a day, ${bandLabel.toLowerCase()}. Join me:`
+      : `Counting istighfar, one day at a time, on Al-Mustaghfirin. Join me:`;
+    if (navigator.share) {
+      try { await navigator.share({ text, url: PLAY_STORE_URL }); } catch (e) { /* user cancelled share sheet, nothing to do */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${PLAY_STORE_URL}`);
+      alert("Copied to clipboard — paste it wherever you'd like to share.");
+    } catch (e) {
+      alert(`${text} ${PLAY_STORE_URL}`);
+    }
+  };
+
   // 8 hex chars (~4.3B possibilities) rather than 4 (~65K) — at 4, a
   // leaderboard of a few hundred anonymous users had a real chance of two
   // people showing the identical "Servant #XXXX" label (birthday bound).
@@ -1607,6 +1624,11 @@ export default function Mustaghfirin() {
                 </div>
               ))}
             </div>
+
+            <button onClick={() => shareProgress(streak, t(myBand.key))}
+              style={{ marginTop: 10, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "transparent", border: `1px solid ${C.line}`, color: C.muted, borderRadius: 14, padding: "12px 14px", fontSize: 13, cursor: "pointer" }}>
+              <Share2 size={15} /> {t("share_progress_btn")}
+            </button>
 
             <div style={{ marginTop: 16, background: C.surface2, borderRadius: 16, padding: 18, border: `1px solid ${C.line}` }}>
               <div className="amiri" style={{ fontSize: 21, color: C.goldBright, textAlign: "center", lineHeight: 2 }}>

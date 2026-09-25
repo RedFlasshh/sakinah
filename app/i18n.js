@@ -114,6 +114,7 @@ const T = {
   stat_lifetime: { en: "Lifetime istighfar", ur: "کل استغفار" },
   stat_days: { en: "Days completed", ur: "مکمل دن" },
   days_unit: { en: "days", ur: "دن" },
+  share_progress_btn: { en: "Share your progress", ur: "اپنی پیش رفت شیئر کریں" },
 
   /* settings */
   settings: { en: "Settings", ur: "ترتیبات" },
